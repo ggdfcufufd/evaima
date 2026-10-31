@@ -109,7 +109,7 @@ const $=id=>document.getElementById(id),R=Math.random,TAU=Math.PI*2,cv=$('c'),g=
 let W,H,Z=1,keys={},P,npcs=[],bushes=[],cars=[],paused=true,last=0,hint='',hold={run:0,eat:0},jv={x:0,y:0},jid=null;
 function rs(){cv.width=W=innerWidth;cv.height=H=innerHeight;Z=Math.max(.8,Math.min(1.5,Math.min(W,H)/480))}rs();onresize=rs;
 // ---------- КАРТА ----------
-const T=32;let N=885,WS=N*T,map=new Uint8Array(N*N),FX=new Float32Array(N*N),FY=new Float32Array(N*N),RV=new Uint8Array(N*N),col=[];const MC={fillStyle:'',fillRect(){}},mm={getContext:()=>MC};
+const T=96;let N=885,WS=N*T,map=new Uint8Array(N*N),FX=new Float32Array(N*N),FY=new Float32Array(N*N),RV=new Uint8Array(N*N),col=[];const MC={fillStyle:'',fillRect(){}},mm={getContext:()=>MC};
 const hs=(x,y)=>{let n=Math.sin(x*127.1+y*311.7+9.3)*43758.5453;return n-Math.floor(n)};
 function vn(x,y){let xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);return(hs(xi,yi)*(1-u)+hs(xi+1,yi)*u)*(1-v)+(hs(xi,yi+1)*(1-u)+hs(xi+1,yi+1)*u)*v}
 const fb=(x,y)=>vn(x*.06,y*.06)*.6+vn(x*.13,y*.13)*.3+vn(x*.3,y*.3)*.1;
@@ -162,7 +162,7 @@ function menuOld(){$('ov').innerHTML='<div class="box"><h1>Остров мута
 function pick(){paused=true;const o=[];while(o.length<3&&o.length<M.length-P.mu.length){const i=R()*M.length|0;if(P.mu.indexOf(i)<0&&o.indexOf(i)<0)o.push(i)}
 $('ov').innerHTML='<div class="box"><h2>Мутация</h2><p>Тело меняется. Выбери одну.</p>'+o.map(i=>'<button class="o" onclick="take('+i+')">'+M[i][0]+'<small>'+M[i][1]+'</small></button>').join('')+'</div>'}
 function take(i){snd('up');P.mu.push(i);P.hp=Math.min(maxhp(),P.hp+30*PSC());paused=false;$('ov').innerHTML=''}
-function die(){snd('die');P.cc=null;if(P.carry)relC(0);P.dead=true;paused=true;netDie();$('ov').innerHTML='<div class="box"><h2>Вы погибли</h2><p>Рост: '+(P.gr|0)+'%. Мутаций: '+P.mu.length+'.</p><button class="o" onclick="menu()">Родиться заново</button></div>'}
+function die(){snd('die');if(P.crocGrab)P.crocGrab.grabPlayer=0;P.crocGrab=null;P.cc=null;if(P.carry)relC(0);P.dead=true;paused=true;netDie();$('ov').innerHTML='<div class="box"><h2>Вы погибли</h2><p>Рост: '+(P.gr|0)+'%. Мутаций: '+P.mu.length+'.</p><button class="o" onclick="menu()">Родиться заново</button></div>'}
 function hurt(d){if(P.dead)return;snd('hurt');if(d>=Math.min(maxhp()*.015,6)&&R()<.4)P.bld=Math.min(14,Math.max(P.bld||0,10));P.hp-=d*PSC()*(1-Math.max(-.3,Math.min(.7,m('arm')-1)))*(P.t.a>0?.3:1);P.hf=.15;if(P.hp<=0)die()}
 function bite(){if(paused||P.dead||P.cd>0||P.carry||P.cc||P.stn>0)return;snd('bite');P.rest=0;P.cd=P.t.fr>0?.2:.6;P.bt=.15;P.am=P.dv&&!P.carry?1:0;if(P.dv&&!P.carry)P.dv=0;if(P.lt){latchBite();return}if(P.carry){const c=P.carry;c.hp-=(c.sc||1)*rf(c)*(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*1.3;c.fl=.12;if(c.hp<=0)killN(c);return}if(pvpHit())return;let b=null,bd=1e9;
 npcs.forEach(n=>{if(n.al)return;const d=Math.hypot(n.x-P.x,n.y-P.y);if(d<P.r*2.4+n.r&&d<bd){b=n;bd=d}});
@@ -179,7 +179,7 @@ if(p.cc){const c=p.cc;if(cars.indexOf(c)<0||c.l<=0||p.lt||p.carry||p.dh>0)p.cc=n
 if(p.bld>0){p.bld-=dt*(p.rest?3:1);p.hp-=maxhp()*.025*dt;if(p.hp<=0){if(p.rest&&hasMu(11))p.hp=1;else{p.hp=0;die()}}}
 p.r=(8+p.gr*.14)*S[p.s].sz;p.age+=dt;p.acd-=dt;for(const k in p.t)p.t[k]-=dt;p.cd-=dt;p.bt-=dt;p.hf-=dt;const mh=maxhp();if(p.lm&&mh!=p.lm)p.hp*=mh/p.lm;p.lm=mh;const ms=160*m('stm'),sw=p.s!=8&&p.s!=11&&tile(p.x,p.y)==0,run=(hold.run||dn('run')||RT)&&l>.1&&p.st>0&&!sw;
 const sp=spx()*(p.carry?.8:p.cc?(p.cc.ch?.92:.75):1)*(p.k?100:115)*S[p.s].spd*(1-p.gr/100*.12)*m('spd')*(1+p.n[2]/100*.12)*(run?1.65:1)*(p.t.s>0?1.6:1)*(tile(p.x,p.y)==0?.5:1)*(p.s==8&&tile(p.x,p.y)<2?(tile(p.x,p.y)==0?2.4:1.4):1);
-if(p.dh>0){p.dh-=dt;mv(p,Math.cos(p.a)*440*dt,Math.sin(p.a)*440*dt);const q=npcs.find(n=>!n.held&&!n.al&&Math.hypot(n.x-p.x,n.y-p.y)<p.r+n.r+10);if(q){p.dh=0;dashHit(q)}}else if(l>.1){p.a=Math.atan2(iy,ix);mv(p,ix*sp*dt,iy*sp*dt)}
+if(p.crocGrab){p.st= Math.max(0,p.st-8*dt)}else if(p.dh>0){p.dh-=dt;mv(p,Math.cos(p.a)*440*dt,Math.sin(p.a)*440*dt);const q=npcs.find(n=>!n.held&&!n.al&&Math.hypot(n.x-p.x,n.y-p.y)<p.r+n.r+10);if(q){p.dh=0;dashHit(q)}}else if(l>.1){p.a=Math.atan2(iy,ix);mv(p,ix*sp*dt,iy*sp*dt)}
 flowM(p,p.dv?dt*.4:dt);if(p.dv&&tile(p.x,p.y)!=0)p.dv=0;p.st=sw?Math.max(0,p.st-16*dt):(run&&p.t.s<=0&&!(p.s==8&&tile(p.x,p.y)<2)?Math.max(0,p.st-12*dt):Math.min(ms,p.st+24*(1+p.n[1]/200)*dt));if(sw&&p.st<=0)hurt(8*dt);
 p.fd=Math.max(0,p.fd-.22*m('hdec')*dt*(run?1.5:1));p.wt=Math.max(0,p.wt-.32*m('tdec')*dt);for(let i=0;i<3;i++)p.n[i]=Math.max(0,p.n[i]-.25*dt);
 if(p.fd<=0||p.wt<=0)hurt(2.5*dt);else if(p.fd>30&&p.wt>30&&!(p.bld>0&&!p.rest))p.hp=Math.min(mh,p.hp+1.8*m('reg')*(1+p.n[0]/100)*dt*PSC());
@@ -360,9 +360,9 @@ const dm=(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*(P.t.d>0?1.25:1)*(P.t.c>0
 function netDie(){if(NET){NET.emit('feed',{t:NICK+(LH?' погиб от '+LH:' погиб')}).catch(()=>{});NET.presence({al:0}).catch(()=>{})}}
 function netTick(dt){if(!NET||!P)return;carsTick(dt);const seen=new Set();
 NET.peers().forEach(q=>{const t=q.presence;if(q.isMe||q.kind!='viewer'||!t||t.x==null)return;const s=t.s|0;if(!S[s]||!isFinite(+t.x)||!isFinite(+t.y))return;seen.add(q.peer);let o=rem.get(q.peer);if(!o){o={x:+t.x,y:+t.y,a:+t.a||0};rem.set(q.peer,o)}
-const k=Math.min(1,dt*12);o.x+=(t.x-o.x)*k;o.y+=(t.y-o.y)*k;o.a+=(((+t.a||0)-o.a+9.4248)%6.2832-3.1416)*k;Object.assign(o,{s,r:Math.min(40,+t.r||10),n:String(t.n||'?').slice(0,14),hp:Math.max(0,Math.min(100,+t.hp||0)),gr:+t.gr||0,bt:+t.bt?1:0,al:+t.al?1:0,dv:+t.dv?1:0,tm:String(t.tm||'').slice(0,12),cc:+t.cc|0,ct:t.ct==null?-1:+t.ct,cr:Math.max(4,Math.min(60,+t.cr||10)),cf:Math.max(0,Math.min(1,+t.cf||0))})});
+const k=Math.min(1,dt*12);o.x+=(t.x-o.x)*k;o.y+=(t.y-o.y)*k;o.a+=(((+t.a||0)-o.a+9.4248)%6.2832-3.1416)*k;Object.assign(o,{s,r:Math.min(40,+t.r||10),n:String(t.n||'?').slice(0,14),hp:Math.max(0,Math.min(100,+t.hp||0)),gr:+t.gr||0,bt:+t.bt?1:0,hf:+t.hf>0?.12:0,al:+t.al?1:0,dv:+t.dv?1:0,tm:String(t.tm||'').slice(0,12),cc:+t.cc|0,ct:t.ct==null?-1:+t.ct,cr:Math.max(4,Math.min(60,+t.cr||10)),cf:Math.max(0,Math.min(1,+t.cf||0))})});
 rem.forEach((o,k)=>{if(!seen.has(k))rem.delete(k)});nt-=dt;
-if(nt<=0){nt=.07;NET.presence({x:Math.round(P.x),y:Math.round(P.y),a:+P.a.toFixed(2),r:+P.r.toFixed(1),s:P.s,n:NICK,hp:Math.round(P.hp/maxhp()*100),gr:Math.round(P.gr),bt:P.bt>0?1:0,al:P.dead?0:1,dv:P.dv?1:0,tm:TEAM,cc:P.cc?(P.cc.ch?2:1):0,ct:P.cc&&P.cc.ty!=null?P.cc.ty:-1,cr:P.cc?+P.cc.r.toFixed(1):0,cf:P.cc?+Math.max(0,Math.min(1,P.cc.l/(P.cc.l0||220))).toFixed(2):0}).catch(()=>{})}}
+if(nt<=0){nt=.07;NET.presence({x:Math.round(P.x),y:Math.round(P.y),a:+P.a.toFixed(2),r:+P.r.toFixed(1),s:P.s,n:NICK,hp:Math.round(P.hp/maxhp()*100),gr:Math.round(P.gr),bt:P.bt>0?1:0,hf:P.hf>0?1:0,al:P.dead?0:1,dv:P.dv?1:0,tm:TEAM,cc:P.cc?(P.cc.ch?2:1):0,ct:P.cc&&P.cc.ty!=null?P.cc.ty:-1,cr:P.cc?+P.cc.r.toFixed(1):0,cf:P.cc?+Math.max(0,Math.min(1,P.cc.l/(P.cc.l0||220))).toFixed(2):0}).catch(()=>{})}}
 function tag(o){const y=-o.r*2.1-10;g.textAlign='center';g.font='bold 11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='rgba(0,0,0,.55)';g.fillRect(-20,y+4,40,5);g.fillStyle='#e05a4a';g.fillRect(-19,y+5,38*o.hp/100,3);const tt=TEAM&&o.tm==TEAM;g.fillStyle=tt?'#7fe08a':'#fff';g.fillText((tt?'❖ ':'')+o.n,0,y);g.textAlign='left'}
 function plHtml(){if(!NET)return'<p>Одиночная игра. Чтобы играть с друзьями, войди в комнату через главное меню — «Мультиплеер».</p>';
 const a=[{n:NICK+' (ты)',s:P.s,gr:P.gr,hp:100*P.hp/maxhp()}];rem.forEach(o=>a.push(o));return'<p class="pts">Комната: <b>'+esc(ROOMN)+'</b></p>'+a.map(o=>'<div class="kv"><span>'+esc(o.n)+'</span><b>'+S[o.s].n+' · '+Math.round(o.gr)+'% · ❤ '+Math.round(o.hp)+'%</b></div>').join('')}
@@ -687,6 +687,35 @@ if(n.cd>cd0+.5){
  n.sf=Math.max(n.sf,2.2);if(n.dv){n.dv=0;n.sp=1}}
 };
 
+// --- ИИ дейнозухов: захват добычи и утаскивание под воду ---
+const _aiGrabBase=ai;
+ai=function(n,dt){
+  if(n.ty!==8||n.al||n.held){_aiGrabBase(n,dt);return}
+  // Continue carrying a caught player beneath the surface.
+  if(n.grabPlayer){
+    const p=P;
+    if(!p||p.dead||Math.hypot(p.x-n.x,p.y-n.y)>n.r*4.5||tile(n.x,n.y)!==0){
+      if(p)p.crocGrab=null;n.grabPlayer=0;n.grabT=0;
+    }else{
+      n.grabT=(n.grabT||0)+dt;n.dv=1;n.sp=1;
+      const a=n.a||0,dist=n.r*.72;
+      p.crocGrab=n;p.x=n.x+Math.cos(a)*dist;p.y=n.y+Math.sin(a)*dist;
+      p.hp-=Math.max(0.5,n.r*.012)*dt;
+      p.ox=(p.ox==null?100:Math.max(0,p.ox-10*dt));
+      if(n.grabT>5||p.hp<=0||p.ox<=0){p.crocGrab=null;n.grabPlayer=0;n.grabT=0;if(p.hp<=0)die();else{p.stun=1.1;msg('🐊 Дейнозух отпустил тебя под водой!')}}
+      return;
+    }
+  }
+  _aiGrabBase(n,dt);
+  const p=P;
+  if(!p||p.dead||p.s===8||p.dv||n.dv||tile(n.x,n.y)!==0)return;
+  const d=Math.hypot(p.x-n.x,p.y-n.y);
+  if(d<n.r+p.r+5&&n.cd<.1&&p.hp>0){
+    n.grabPlayer=1;n.grabT=0;n.dv=1;n.sp=1;n.a=Math.atan2(p.y-n.y,p.x-n.x);n.cd=4;
+    p.crocGrab=n;p.stun=0;msg('🐊 Дейнозух схватил тебя и тащит под воду!');
+  }
+};
+
 // --- нюх: видны только затаившиеся дейнозухи ---
 function sniffList(rad,pOnly){const a=[];
 npcs.forEach(n=>{if(n.ty!=8||!n.dv||n.held||n.al)return;const d=Math.hypot(n.x-P.x,n.y-P.y);if(d>rad||d<2)return;a.push({x:n.x,y:n.y,c:'#4ac8ff',cr:1,r:n.r})});
@@ -800,23 +829,7 @@ body=()=>{const breath=1+Math.sin(TM*2.4+(oy||0))*.025, bob=Math.sin(ph*2)*r*.02
  // Рельефный гребень и блики чешуи делают силуэт объёмнее.
  Lb(r*.92,()=>{g.fillStyle=sh(c,1.32);g.beginPath();g.moveTo(-r*.85,-r*.48);g.quadraticCurveTo(-r*.15,-r*1.02,r*.65,-r*.48);g.quadraticCurveTo(0,-r*.67,-r*.85,-r*.48);g.fill();
    g.fillStyle='rgba(255,255,255,.12)';for(let k=0;k<5;k++){g.beginPath();g.arc(-r*.55+k*r*.28,-r*.43,r*.045,0,TAU);g.fill()}
-   // EVRIMA-inspired skin: layered fine scales, mottled pigmentation and muscle folds.
-   for(let row=0;row<4;row++)for(let col=0;col<13;col++){
-     const u=-r*.94+col*r*.155+(row%2)*r*.07,v=-r*.31+row*r*.19;
-     const n=hs(oy*31+row*17,col*13+oy);
-     g.fillStyle=n>.52?'rgba(12,16,13,.16)':'rgba(235,224,194,.10)';
-     g.beginPath();g.ellipse(u,v,r*(.035+n*.018),r*(.025+n*.012),-.18,0,TAU);g.fill();
-   }
-   g.strokeStyle='rgba(15,19,15,.20)';g.lineWidth=Math.max(1,r*.018);
-   for(let k=0;k<3;k++){g.beginPath();g.moveTo(-r*.62,-r*.12+k*r*.18);g.quadraticCurveTo(-r*.1,r*.02+k*r*.16,r*.58,-r*.1+k*r*.18);g.stroke()}
- });
- // Fine feather filaments along the neck and back on feathered species.
- if(feath)Lb(r*.76,()=>{for(let side of [-1,1])for(let k=0;k<17;k++){
-   const u=-r*.72+k*r*.105,v=side*r*(.42+.035*Math.sin(k*1.7));
-   g.strokeStyle=k%3?'rgba(18,22,19,.48)':'rgba(220,207,174,.32)';g.lineWidth=Math.max(1,r*.025);
-   g.beginPath();g.moveTo(u,v);g.quadraticCurveTo(u-r*.07,v+side*r*.12,u-r*.16,v+side*r*.22);g.stroke();
- }});
- arms()},
+ });arms()},
 head=()=>{const hz=r*HZ[oy]+zb,hx=r*1.7+ru*.3,nz=r*.85+zb;
  if(oy==15){const N=14;for(let i=0;i<=N;i++){const t=i/N,u=r*(.9+t*3.2),z=r*(.8+t*1.1+Math.sin(t*3.1)*.3)+zb,v=Math.sin(TM*.8+t*2.5)*r*.18*t,q=r*(.52-.28*t);L(z,()=>{F(.78+.3*t);el(u,v,q*1.15,q)});L(z+q*.5,()=>{F(1.05+.2*t);el(u+r*.04,v,q*.7,q*.45)})}
   const hu=r*4.2,hz2=r*2.0+zb,hv=Math.sin(TM*.8+2.6)*r*.18;L(hz2,()=>{F(1.05);el(hu,hv,r*.4,r*.21);F(1.2);el(hu+r*.22,hv,r*.22,r*.16);g.fillStyle='rgba(0,0,0,.6)';[-1,1].forEach(s=>el(hu+r*.3,hv+s*r*.08,r*.04,r*.03))});
@@ -831,10 +844,7 @@ head=()=>{const hz=r*HZ[oy]+zb,hx=r*1.7+ru*.3,nz=r*.85+zb;
  if(oy==3)L(hz+r*.15,()=>{g.strokeStyle='#f1e8cc';g.lineWidth=r*.2;g.lineCap='round';[-1,1,0].forEach(s=>{g.beginPath();g.moveTo(hx+ru*.5,s*rv*.45);g.lineTo(hx+ru*(s?1.7:1.25),s*rv*(s?.6:0));g.stroke()})});
  if(oy==1)[0,1,2].forEach(k=>L(hz+rv*.45+k*r*.1,()=>{g.fillStyle='#efe6cf';[-1,1].forEach(s=>el(hx-ru*.12,s*rv*.7,r*(.11-.035*k),r*(.11-.035*k)))}));
  L(hz+rv*.25,()=>{g.fillStyle='rgba(0,0,0,.6)';[-1,1].forEach(s=>el(hx+ru*.85,s*rv*.28,r*.045,r*.03))});
- L(hz+rv*.3,()=>{[-1,1].forEach(s=>{F(.62);el(hx-ru*.08,s*rv*.7,r*.15,r*.075);g.fillStyle='#f0c850';el(hx-ru*.05,s*rv*.62,r*.1,r*.1);g.fillStyle='#000';el(hx-ru*.03,s*rv*.62,r*.03,r*.07);g.fillStyle='rgba(255,255,255,.8)';el(hx-ru*.08,s*rv*.58,r*.022,r*.022)})});
- // Small facial scales and a raised brow ridge for a more natural animal silhouette.
- L(hz+rv*.12,()=>{for(let k=0;k<9;k++){const u=hx+ru*(.05+k*.17);g.fillStyle=k%2?'rgba(0,0,0,.17)':'rgba(235,224,194,.12)';el(u,-rv*.46-r*.025*(k%3),r*.055,r*.035)}
-   g.strokeStyle='rgba(15,18,15,.42)';g.lineWidth=r*.075;[-1,1].forEach(s=>{g.beginPath();g.moveTo(hx-ru*.2,s*rv*.48);g.quadraticCurveTo(hx+ru*.02,s*rv*.86,hx+ru*.32,s*rv*.55);g.stroke()})})};
+ L(hz+rv*.3,()=>{[-1,1].forEach(s=>{F(.62);el(hx-ru*.08,s*rv*.7,r*.15,r*.075);g.fillStyle='#f0c850';el(hx-ru*.05,s*rv*.62,r*.1,r*.1);g.fillStyle='#000';el(hx-ru*.03,s*rv*.62,r*.03,r*.07);g.fillStyle='rgba(255,255,255,.8)';el(hx-ru*.08,s*rv*.58,r*.022,r*.022)})})};
 const ex=()=>{if(oy>8&&oy!=15&&oy!=11)exN(oy,r,c,Lb,F,el);
  if(oy==11){const N=18,zt=r*.8+zb,top=i=>r*(.35+1.15*Math.pow(Math.sin(Math.PI*i/N),.7)),base=i=>{const p=pt(-r*1.15+i/N*r*2.4,0);return[p[0],p[1]-zt]};
   g.fillStyle=sh(c,1.18);g.beginPath();for(let i=0;i<=N;i++){const b=base(i);i?g.lineTo(b[0],b[1]-top(i)):g.moveTo(b[0],b[1]-top(i))}for(let i=N;i>=0;i--){const b=base(i);g.lineTo(b[0],b[1])}g.closePath();g.fill();
@@ -1265,4 +1275,193 @@ const _upS=upX;upX=function(dt){_upS(dt);safeTick(dt)};
 const _drawS=draw;draw=function(){_drawS();if(SX&&!MS&&P&&!P.dead){g.save();g.setTransform(1,0,0,1,0,0);g.font='bold 15px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='center';const t='🚪 Безопасный выход: '+Math.ceil(Math.max(0,SAFE_T-SX.t))+' с';g.fillStyle='rgba(0,0,0,.6)';g.fillText(t,W/2+1,H*.14+1);g.fillStyle='#e9e4cf';g.fillText(t,W/2,H*.14);g.restore()}};
 let th0=0;try{th0=+localStorage.getItem('isle2d_theme')||0}catch(e){}if(!TH[th0])th0=0;
 accInit();applyTheme(th0);menu();requestAnimationFrame(loop);
+
+// ====================== ОБЩИЙ МИР МУЛЬТИПЛЕЕРА ======================
+// Кусты, гнёзда и дикие динозавры хранятся в одной комнате Firebase.
+let WSH=null,WSH_OFF=null,WSH_T=0,WSH_BUSY=0,WSH_REV=0,WSH_LAST='';
+const wshHost=()=>{if(!NET)return false;const ids=NET.peers().map(q=>String(q.peer||'')).filter(Boolean).sort();return ids.length>0&&ids[0]===String(myUid())};
+function wshPack(){
+ const bs=bushes.map(b=>[+b.x.toFixed(1),+b.y.toFixed(1),+b.l.toFixed(2),+b.t.toFixed(1)]);
+ const ns=nests.map(n=>[+n.x.toFixed(1),+n.y.toFixed(1),n.ty|0,n.own?1:0,+n.rt.toFixed(1),+n.ex.toFixed(1),n.e.map(e=>[e.ty|0,+e.h.toFixed(1),e.inc?1:0])]);
+ const ds=npcs.filter(n=>!n.nc).map(n=>[+n.x.toFixed(1),+n.y.toFixed(1),+n.a.toFixed(3),n.ty|0,n.k==='p'?1:0,+n.hp.toFixed(1),n.al?1:0,n.tm||'',n.ch?1:0,n.fear?1:0]);
+ return {v:1,bs,ns,ds,at:Date.now()};
+}
+function wshApply(v){if(!v||v.v!==1)return;
+ if(Array.isArray(v.bs)&&v.bs.length){bushes=v.bs.map(a=>({x:+a[0],y:+a[1],l:+a[2],t:+a[3]||0,r:10,q:[.4,.3,.3]}));}
+ if(Array.isArray(v.ns)){nests=v.ns.map(a=>({x:+a[0],y:+a[1],ty:+a[2]|0,own:!!a[3],rt:+a[4]||0,ex:+a[5]||0,e:(Array.isArray(a[6])?a[6]:[]).map(e=>({ty:+e[0]|0,h:+e[1]||0,inc:!!e[2]}))}));NH=null;}
+ if(Array.isArray(v.ds)){const old=new Map(npcs.map(n=>[n._wid,n]));npcs=v.ds.map((a,i)=>{const n=old.get(i)||mkNpc(a[4]?'p':'h',0);Object.assign(n,{_wid:i,x:+a[0],y:+a[1],a:+a[2],ty:+a[3]|0,k:a[4]?'p':'h',hp:+a[5],al:!!a[6],tm:String(a[7]||''),ch:+a[8]?1:0,fear:+a[9]||0});n.r=RAD[n.ty]||10;n.c=S[n.ty]?S[n.ty].c:'#777';n.mh=n.mh||MASS[n.ty]||100;n.sc=n.sc||1;n.fl=0;n.stun=0;n.cd=0;n.wt=0;return n;});NFAR=[];}
+}
+async function wshStart(){
+ if(!NET||!P)return;try{if(WSH_OFF){WSH_OFF();WSH_OFF=null}WSH=db_().ref('rooms/'+ROOMN+'/sharedWorld');
+ const snap=await WSH.once('value');let v=snap.val();
+ if(!v){const init=wshPack();const tr=await WSH.transaction(cur=>cur||init);v=tr.snapshot.val()||init;}
+ if(!wshHost())wshApply(v);WSH_OFF=WSH.on('value',ss=>{const x=ss.val();if(x&&x.at&&x.at>WSH_REV){WSH_REV=x.at;if(!wshHost())wshApply(x)}});
+ WSH_LAST=JSON.stringify(v);WSH_T=0;
+ }catch(e){console.warn('Shared world sync:',e)}
+}
+function wshTick(dt){if(!NET||!P||paused||!WSH)return;WSH_T-=dt;if(WSH_T>0||WSH_BUSY)return;WSH_T=1.25;
+ if(!wshHost())return;
+ const v=wshPack(),raw=JSON.stringify(v);if(raw===WSH_LAST)return;WSH_BUSY=1;WSH.set(v).then(()=>{WSH_LAST=raw;WSH_REV=v.at}).catch(e=>console.warn('Shared world write:',e)).finally(()=>WSH_BUSY=0);
+}
+const _netTickShared=netTick;netTick=function(dt){_netTickShared(dt);wshTick(dt)};
+const _startSharedWorld=start;start=function(si){_startSharedWorld(si);if(NET)setTimeout(wshStart,350)};
+const _leaveSharedWorld=leaveNet;leaveNet=function(keep){if(WSH&&WSH_OFF){try{WSH.off('value',WSH_OFF)}catch(e){}}WSH=null;WSH_OFF=null;WSH_T=0;WSH_BUSY=0;WSH_REV=0;WSH_LAST='';_leaveSharedWorld(keep)};
+
+
+// --- Динамичный ИИ: преследование, обход с фланга, рывки и реакция на угрозы ---
+const _aiDynamicBase=ai;
+ai=function(n,dt){
+  if(!n||n.al||n.held||n.ty===8){_aiDynamicBase(n,dt);return}
+  const px=P&&!P.dead?P.x:null,py=P&&!P.dead?P.y:null;
+  const d=px==null?1e9:Math.hypot(px-n.x,py-n.y);
+  n.dynT=(n.dynT||0)-dt;
+  n.dynBurst=Math.max(0,(n.dynBurst||0)-dt);
+  n.dynStrafe=(n.dynStrafe||0)-dt;
+  // Keep the original species logic, then add tactical movement on top.
+  _aiDynamicBase(n,dt);
+  if(n.k==='p'&&px!=null&&d<520&&d>n.r+P.r+10){
+    if(n.dynT<=0){
+      n.dynT=.65+R()*1.15;
+      n.dynSide=R()<.5?-1:1;
+      n.dynStrafe=.35+R()*.55;
+      // A short burst is used only when close enough and sufficiently rested.
+      if(d<245&&(n.en||0)>24&&R()<.62)n.dynBurst=.45+R()*.35;
+    }
+    if(n.dynStrafe>0&&d<260){
+      const direct=Math.atan2(py-n.y,px-n.x);
+      const flank=direct+n.dynSide*(.48+Math.max(0,1-d/260)*.42);
+      steer(n,flank,n.dynBurst>0?Math.max(105,155-n.r*.8):Math.max(48,78-n.r*.25),dt);
+      n.rn=n.dynBurst>0?1:n.rn;
+    }
+  }
+  // Herbivores make sharp, irregular escape turns instead of running in a straight line.
+  if(n.k==='h'&&px!=null&&d<210&&n.dynEvade<=0){
+    n.dynEvade=.55+R()*.65;
+    const away=Math.atan2(n.y-py,n.x-px);
+    n.a=away+(R()<.5?-1:1)*(.25+R()*.7);
+    n.rn=1;
+  }else if(n.k==='h')n.dynEvade=(n.dynEvade||0)-dt;
+};
+
+
+// === Большая карта, регионы, три точки рождения на регион и нюх по клавише T ===
+const SNIFF_REGIONS=[
+ {name:'Детский сад',emoji:'🌱',cx:.50,cy:.50,spawns:[[.46,.47],[.54,.48],[.50,.55]]},
+ {name:'Джунгли',emoji:'🌴',cx:.22,cy:.25,spawns:[[.16,.22],[.24,.18],[.28,.31]]},
+ {name:'Саванна',emoji:'🦒',cx:.78,cy:.24,spawns:[[.72,.18],[.82,.22],[.77,.32]]},
+ {name:'Пляж',emoji:'🏝️',cx:.50,cy:.83,spawns:[[.40,.84],[.50,.88],[.61,.82]]}
+];
+let selectedRegion=0,selectedSpawn=0,sniffToggleOn=false,scentHistory=[];
+function regionAt(x,y){let nx=x/WS,ny=y/WS,best=SNIFF_REGIONS[0],bd=9;for(const r of SNIFF_REGIONS){let d=(nx-r.cx)**2+(ny-r.cy)**2;if(d<bd){bd=d;best=r}}return best}
+function sniffPanel(){let el=document.getElementById('sniffHud');if(!el){el=document.createElement('div');el.id='sniffHud';el.style.cssText='position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:20;max-width:min(92vw,430px);padding:10px 14px;background:rgba(7,14,9,.88);border:1px solid #a98b50;color:#eee8d5;font:13px/1.5 Arial,sans-serif;pointer-events:none;display:none;text-align:left';document.body.appendChild(el)}return el}
+function toggleSniff(){sniffToggleOn=!sniffToggleOn;const el=sniffPanel();el.style.display=sniffToggleOn?'block':'none';if(sniffToggleOn)updateSniff()}
+function updateSniff(){if(!sniffToggleOn||!P||P.dead)return;const now=Date.now(),here=regionAt(P.x,P.y);scentHistory=scentHistory.filter(t=>now-t.t<45000);let rows=scentHistory.map(t=>({t,d:Math.hypot(t.x-P.x,t.y-P.y),name:t.name})).filter(t=>t.d<WS*.22).sort((a,b)=>a.d-b.d).slice(0,7);let html='<b style="color:#e2bd70">👃 НЮХ АКТИВЕН · T</b><br><b>'+here.emoji+' '+here.name+'</b><br><span style="opacity:.8">Следы поблизости:</span>';if(rows.length)html+='<br>'+rows.map(t=>'• '+t.name+' — '+Math.round(t.d/96)+' м · '+Math.max(1,Math.round((now-t.t)/1000))+'с назад').join('<br>');else html+='<br><span style="opacity:.65">Свежих следов поблизости нет</span>';html+='<br><span style="opacity:.65">Локации: Детский сад · Джунгли · Саванна · Пляж</span>';sniffPanel().innerHTML=html}
+setInterval(()=>{if(!P||P.dead||paused)return;const now=Date.now();for(const n of npcs){if(n&&Number.isFinite(n.x)&&Number.isFinite(n.y)&&R()<.13)scentHistory.push({x:n.x,y:n.y,t:now,name:(S[n.ty]&&S[n.ty].n)||'Динозавр'})}if(P&&Number.isFinite(P.x)&&Number.isFinite(P.y))scentHistory.push({x:P.x,y:P.y,t:now,name:'Игрок'});if(scentHistory.length>600)scentHistory.splice(0,scentHistory.length-600);updateSniff()},1800);
+const _sniffKey=addEventListener;addEventListener('keydown',function(e){if(e.code==='KeyT'&&e.target.tagName!=='INPUT'&&!CAP){e.preventDefault();if(!e.repeat)toggleSniff()}},true);
+// Вставляем выбор региона и одной из трёх точек в экран выбора динозавра.
+const _pickRegionBase=pickSp;pickSp=function(){_pickRegionBase();let d=document.querySelector('#ov .det');if(!d)return;let box=document.createElement('div');box.className='dt';box.innerHTML='<h4>Место рождения</h4><div class="ml" id="regionBtns"></div><div class="ml" id="spawnBtns"></div><small>В каждом регионе три точки спавна.</small>';let go=d.querySelector('.go');d.insertBefore(box,go);function draw(){box.querySelector('#regionBtns').innerHTML=SNIFF_REGIONS.map((r,i)=>'<button class="mb '+(i===selectedRegion?'s':'')+'" data-r="'+i+'">'+r.emoji+' '+r.name+'</button>').join('');box.querySelector('#spawnBtns').innerHTML=SNIFF_REGIONS[selectedRegion].spawns.map((q,i)=>'<button class="mb '+(i===selectedSpawn?'s':'')+'" data-s="'+i+'">Точка '+(i+1)+'</button>').join('');box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{selectedRegion=+b.dataset.r;selectedSpawn=0;draw()});box.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{selectedSpawn=+b.dataset.s;draw()})}draw()};
+const _startRegionBase=start;start=function(si){_startRegionBase(si);if(P){const q=SNIFF_REGIONS[selectedRegion].spawns[selectedSpawn];P.x=q[0]*WS;P.y=q[1]*WS;P.a=0;P._spawnRegion=SNIFF_REGIONS[selectedRegion].name;scentHistory=[];sniffToggleOn=false;const el=document.getElementById('sniffHud');if(el)el.style.display='none';if(typeof banner==='function')banner('📍 '+P._spawnRegion+' · точка '+(selectedSpawn+1))}};
+
+
+// === СОЛЁНАЯ ВОДА И МУТАЦИЯ «ГАЛОФИЛ» ===
+// Береговая зона считается морской: пресная река внутри острова остаётся обычной водой.
+const isSaltWater=(x,y)=>tile(x,y)===0&&regionAt(x,y).name==='Пляж'&&Math.hypot(x/WS-.5,y/WS-.83)<.24;
+const HALO_MUT=M.length;
+M.push(['Галофил','Позволяет пить солёную воду без обезвоживания',{tdec:-.08},['Секретная мутация: сначала пей солёную воду, затем оставь труп в морской воде и съешь его']]);
+function haloUnlock(){if(!P||P.mu.includes(HALO_MUT))return;P.mu.push(HALO_MUT);P.hp=Math.min(maxhp(),P.hp+25*PSC());msg('🧬 Мутация «Галофил» открыта! Теперь можно пить солёную воду.');if(NET)NET.emit('feed',{t:NICK+' получил мутацию Галофил'}).catch(()=>{});}
+const _eatT_salt=eatT;
+eatT=function(tg,dt){const wasSoaked=!!tg.saltSoaked;_eatT_salt(tg,dt);if(P&&!P.k&&wasSoaked&&P._saltDrank>=2.5&&!P.mu.includes(HALO_MUT)){P._saltCorpseEaten=true;haloUnlock()}};
+// Счётчик питья и пропитывание туши; также работает для локальных и сетевых туш.
+setInterval(()=>{if(!P||P.dead||paused)return;const nearWater=tile(P.x,P.y)<2||tile(P.x+Math.cos(P.a)*(P.r+10),P.y+Math.sin(P.a)*(P.r+10))<2;const salt=nearWater&&isSaltWater(P.x,P.y);const drinking=!!(hold.eat||dn('eat'))&&nearWater;
+ if(drinking&&salt){P._saltDrank=(P._saltDrank||0)+.2;if(!P.mu.includes(HALO_MUT)){P.wt=Math.max(0,P.wt-8*.2);if(P._saltDrank>=2.5)msg('🧂 Солёная вода в организме. Теперь помести труп в море и съешь его!')}}
+ for(const c of cars){if(!c||c.l<=0)continue;if(isSaltWater(c.x,c.y)){c.saltSoaked=true;c.saltTime=(c.saltTime||0)+.2;c.saltWater=Math.min(100,(c.saltWater||0)+.9); // солёная вода вытягивает влагу из трупа
+   c.l=Math.max(0,c.l-.025);if(c.saltTime>2)c.saltReady=true;
+ }else if(c.saltSoaked){c.saltWater=Math.max(0,(c.saltWater||0)-.1)}}
+},200);
+// Подсказка у моря.
+const _eatHintSalt=eatT;
+const _drawSalt=draw;draw=function(){_drawSalt();if(!MS&&P&&!P.dead&&isSaltWater(P.x,P.y)&&!(P.mu||[]).includes(HALO_MUT)){g.save();g.textAlign='center';g.font='12px Arial';g.fillStyle='#9ed9e8';g.fillText('СОЛЁНАЯ ВОДА: пить опасно · T — нюх',W/2,H-168);g.restore()}};
+
+
+// === БОЛОТО И РАСПРЕДЕЛЕНИЕ ДИНОЗАВРОВ ПО ЕСТЕСТВЕННЫМ АРЕАЛАМ ===
+// Три возможные точки рождения в каждом регионе; фактическая точка выбирается случайно.
+SNIFF_REGIONS.push({name:'Болото',emoji:'🐊',cx:.20,cy:.76,spawns:[[.13,.70],[.22,.77],[.29,.83]]});
+const REGION_HABITATS={
+ 'Детский сад':[0,1,2,3,4,5,6,7,9,10,11,12,13,14,15,16],
+ 'Джунгли':[0,1,2,4,6,7,9,10,12,13,14],
+ 'Саванна':[1,2,3,4,5,6,7,9,10,11,12,13,14,15,16],
+ 'Пляж':[2,3,6,9,10,13,14],
+ 'Болото':[2,6,7,8,10,13,14,16]
+};
+// Ареалы с весами: виды с несколькими подходящими регионами распределяются случайно между ними.
+const HABITAT_WEIGHTS={
+ 0:{'Джунгли':5,'Детский сад':2,'Болото':1},
+ 1:{'Джунгли':3,'Саванна':4,'Детский сад':1},
+ 2:{'Джунгли':2,'Саванна':2,'Пляж':1,'Болото':2,'Детский сад':1},
+ 3:{'Саванна':4,'Пляж':2,'Детский сад':1},
+ 4:{'Джунгли':3,'Саванна':3,'Детский сад':1},
+ 5:{'Саванна':5,'Детский сад':1},
+ 6:{'Джунгли':2,'Саванна':2,'Болото':2,'Детский сад':1},
+ 7:{'Джунгли':2,'Болото':3,'Детский сад':1},
+ 8:{'Болото':5,'Пляж':2},
+ 9:{'Джунгли':2,'Пляж':2,'Детский сад':1},
+ 10:{'Болото':3,'Пляж':2,'Джунгли':1},
+ 11:{'Саванна':4,'Детский сад':1},
+ 12:{'Джунгли':3,'Детский сад':1},
+ 13:{'Болото':3,'Джунгли':2,'Саванна':1},
+ 14:{'Болото':2,'Джунгли':2,'Саванна':1},
+ 15:{'Саванна':4,'Детский сад':1},
+ 16:{'Болото':3,'Саванна':2,'Детский сад':1}
+};
+// Естественные ареалы новых видов.
+REGION_HABITATS['Болото'].push(18,19,20);
+REGION_HABITATS['Пляж'].push(18,20);
+REGION_HABITATS['Джунгли'].push(19);
+HABITAT_WEIGHTS[18]={'Болото':5,'Пляж':3,'Джунгли':1};
+HABITAT_WEIGHTS[19]={'Болото':5,'Детский сад':1};
+HABITAT_WEIGHTS[20]={'Пляж':4,'Болото':3,'Саванна':1};
+function weightedHabitat(ty){const w=HABITAT_WEIGHTS[ty]||{'Детский сад':1};let sum=0;for(const v of Object.values(w))sum+=v;let r=R()*sum;for(const [name,v] of Object.entries(w)){r-=v;if(r<=0)return SNIFF_REGIONS.find(q=>q.name===name)||SNIFF_REGIONS[0]}return SNIFF_REGIONS[0]}
+function habitatPoint(region){const q=region.spawns[(R()*region.spawns.length)|0];let x=q[0]*WS,y=q[1]*WS;
+ // Не ставим наземных динозавров в воду/за пределы карты; ищем ближайшую подходящую сушу.
+ if(region.name!=='Болото'&&region.name!=='Пляж'){
+  for(let k=0;k<45&&![2,3,5].includes(tile(x,y));k++){x+=(R()-.5)*WS*.035;y+=(R()-.5)*WS*.035;x=Math.max(20,Math.min(WS-20,x));y=Math.max(20,Math.min(WS-20,y))}
+ }
+ return [Math.max(10,Math.min(WS-10,x)),Math.max(10,Math.min(WS-10,y))];
+}
+function distributeWildlife(){
+ if(!Array.isArray(npcs)||!npcs.length)return;
+ for(const n of npcs){if(!n||n.al||n.kin||n.nc||n.ev||n.held)continue;
+  let r;
+  if(n.ty===8)r=SNIFF_REGIONS.find(q=>q.name==='Болото');
+  else r=weightedHabitat(n.ty);
+  if(!r)continue;const p=habitatPoint(r);n.x=p[0];n.y=p[1];n.habitat=r.name;n._habSpawn=1;
+ }
+}
+// === НОВЫЕ ВИДЫ: БАРИОНИКС, ДЕЙНОХЕЙРУС И СУХОМИМ ===
+// Остальные виды из предложенного списка уже присутствуют в ростере игры.
+S.push(
+ {n:'Барионикс',k:0,c:'#557d69',hp:1.12,spd:1.02,dmg:1.18,sz:1.05,d:'Полуводный рыбоядный хищник. Предпочитает болота и берега, хорошо охотится у воды.'},
+ {n:'Дейнохейрус',k:1,c:'#8a8060',hp:1.42,spd:.82,dmg:1.12,sz:1.2,d:'Крупный всеядный динозавр болот. Крепкий корпус и длинные когти помогают защищаться.'},
+ {n:'Сухомим',k:0,c:'#a47b4b',hp:1.08,spd:1.08,dmg:1.12,sz:1.08,d:'Полуводный охотник побережий. Быстро передвигается у воды и охотится на мелкую добычу.'}
+);
+MASS.push(1800,5000,2500); RAD.push(23,28,23);
+// Визуальные архетипы: барионикс/сухомим — спинозавропод, дейнохейрус — крупный травоядный.
+BM.push(1,4,1);
+PW.push(18,20); HW.push(19);
+AB[18]=['Рывок у воды',16,()=>{P.t.s=4;P.st=Math.min(200*m('stm'),P.st+35)},'короткий ускоренный рывок у воды'];
+AB[19]=['Защитный взмах',18,()=>{near(115,n=>{if(n.k==='h'){n.stun=1.4;n.fear=2;hurt(22*P.s.dmg)}})},'взмах когтями отпугивает и оглушает ближайших хищников'];
+AB[20]=['Береговой бросок',16,()=>{P.dh=.22;P.t.s=3},'быстрый бросок вперёд с усиленным первым укусом'];
+
+// Обновляем подсказку нюха с учётом новой пятой локации.
+const _updateSniffSwamp=updateSniff;
+updateSniff=function(){_updateSniffSwamp();if(sniffToggleOn){const el=document.getElementById('sniffHud');if(el){const old=el.innerHTML;el.innerHTML=old.replace('Детский сад · Джунгли · Саванна · Пляж','Детский сад · Джунгли · Саванна · Пляж · Болото')}}};
+// При рождении выбираем случайную из трёх точек региона, а не фиксированную.
+const _startHabitatBase=start;
+start=function(si){_startHabitatBase(si);if(P){const reg=SNIFF_REGIONS[selectedRegion]||SNIFF_REGIONS[0],idx=(R()*reg.spawns.length)|0,q=reg.spawns[idx];P.x=q[0]*WS;P.y=q[1]*WS;P._spawnRegion=reg.name;P._spawnPoint=idx+1;if(typeof banner==='function')banner('📍 '+reg.name+' · случайная точка рождения')}};
+// Распределяем диких динозавров по подходящим биомам после создания мира и при респавне.
+const _startHabitatWorld=start;
+start=function(si){_startHabitatWorld(si);setTimeout(distributeWildlife,120)};
+const _respawnHabitat=respawn;
+respawn=function(n){_respawnHabitat(n);setTimeout(()=>{const a=npcs[npcs.length-1];if(a&&!a.al&&!a.kin){const r=a.ty===8?SNIFF_REGIONS.find(q=>q.name==='Болото'):weightedHabitat(a.ty);if(r){const p=habitatPoint(r);a.x=p[0];a.y=p[1];a.habitat=r.name}}},40100)};
+
 </script></body></html>
