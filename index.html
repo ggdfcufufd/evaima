@@ -133,10 +133,22 @@ const M=[['Толстая шкура','Броня +25%, скорость −8%',
 ['Ксерофил','Жажда −45%, здоровье −10%',{tdec:-.45,hp:-.1}],['Гиперметаболизм','Голод −35%, урон −12%',{hdec:-.35,dmg:-.12}],
 ['Лёгкие бегуна','Выносливость +40%, броня −10%',{stm:.4,arm:-.1}],['Регенерация','Лечение +60%, голод +25%',{reg:.6,hdec:.25}]];
 const m=k=>{let s=1;P.mu.forEach(i=>s+=M[i][2][k]||0);P.ps.forEach(id=>s+=PSX[id].m[k]||0);return s*dfm(k)};
-const maxhp=()=>(80+160*P.gr/100)*m('hp')*S[P.s].hp;
+const maxhp=()=>wNow(P.s,P.gr)*m('hp');
+// ---------- НАУЧНЫЙ ВЕС: здоровье = масса тела в кг ----------
+// Взрослая масса вида (кг), средние палеонтологические оценки:
+// Дейноних ~73 (Campione 2014), Карнотавр ~1500, Гипсилофодон ~20, Трицератопс ~6000, Аллозавр ~2000,
+// Тираннозавр ~8400 (экз. «Sue»), Паразауролоф ~2500, Анкилозавр ~6000, Дейнозух ~2500 (Erickson&Brochu),
+// Дилофозавр ~400, Ютараптор ~500, Спинозавр ~7400, Компсогнат ~3, Стегозавр ~5000,
+// Пахицефалозавр ~450, Диплодок ~15000, Теризинозавр ~5000.
+const MASS=[73,1500,20,6000,2000,8400,2500,6000,2500,400,500,7400,3,5000,450,15000,5000],MG0=.2;
+const wNow=(s,gr)=>MASS[s]*Math.pow(MG0+(1-MG0)*gr/100,3);          // масса растёт как куб длины (L: 20%→100%)
+const fkg=v=>v<10?(Math.round(v*10)/10).toLocaleString('ru')+' кг':Math.round(v).toLocaleString('ru')+' кг';
+const PSC=()=>wNow(P.s,P.gr)/((80+160*P.gr/100)*S[P.s].hp);           // перевод старых единиц урона/лечения в кг
+const rf=t=>Math.max(.7,Math.min(1.4,Math.pow(wNow(P.s,P.gr)/Math.max(.01,t.mh||1),.15)));  // крупнее — кусает сильнее
+
 // ---------- МИР ----------
-function mkNpc(k,far){const[x,y]=rp(far),ty=k=='p'?PW[R()*PW.length|0]:HW[R()*HW.length|0],r=RAD[ty];return{x,y,a:R()*TAU,k,ty,c:k=='p'&&ty<9?['#8a2e2e','#7a3a1e','#5a2a40','#6a2020'][R()*4|0]:S[ty].c,r,hp:r*(k=='p'?9:4),mh:r*(k=='p'?9:4),cd:0,fl:0,wt:0,sp:1,fear:0,ch:0}}
-function start(si){const k=S[si].k;P={s:si,sl:[],ps:[],xs:[null,null],xcd:[0,0],sp:0,gs:0,cnb:0,lay:0,acd:0,t:{s:0,d:0,a:0,c:0,b:0,g:0,v:0,rg:0,hd:0,sn:0,hk:0},dh:0,pts:0,got:0,age:0,x:0,y:0,a:0,r:8,k,hp:80,st:160,fd:80,wt:75,n:[50,50,50],gr:0,mu:[],cd:0,bt:0,hf:0,dead:false};
+function mkNpc(k,far){const[x,y]=rp(far),ty=k=='p'?PW[R()*PW.length|0]:HW[R()*HW.length|0],r=RAD[ty];return{x,y,a:R()*TAU,k,ty,c:k=='p'&&ty<9?['#8a2e2e','#7a3a1e','#5a2a40','#6a2020'][R()*4|0]:S[ty].c,r,hp:MASS[ty],mh:MASS[ty],sc:MASS[ty]/(r*(k=='p'?9:4)),cd:0,fl:0,wt:0,sp:1,fear:0,ch:0}}
+function start(si){const k=S[si].k;P={s:si,sl:[],ps:[],xs:[null,null],xcd:[0,0],sp:0,gs:0,cnb:0,lay:0,acd:0,t:{s:0,d:0,a:0,c:0,b:0,g:0,v:0,rg:0,hd:0,sn:0,hk:0},dh:0,pts:0,got:0,age:0,x:0,y:0,a:0,r:8,k,hp:80,st:160,fd:80,wt:75,n:[50,50,50],gr:0,mu:[],cd:0,bt:0,hf:0,dead:false};P.hp=P.lm=maxhp();
 let r=0,f=0;for(;!f&&r<50;r++)for(let a=0;a<TAU&&!f;a+=.4){const x=WS/2+Math.cos(a)*r*T,y=WS/2+Math.sin(a)*r*T;if(tile(x,y)==3){P.x=x;P.y=y;f=1}}
 npcs=[];for(let i=0;i<210;i++)npcs.push(mkNpc('h',1));for(let i=0,n2=Math.round(33*DIF().pr);i<n2;i++)npcs.push(mkNpc('p',1));
 bushes=[];for(let i=0;i<1000;i++){const[x,y]=rp(),c=.45+R()*.3,l=.2+R()*.2;bushes.push({x,y,l:60,t:0,r:10,q:[1-c-l,l,c]})}
@@ -144,21 +156,21 @@ cars=[];initWorldX(si);paused=false;tabOn=false;selS=selM=-1;LH='';if(NET)NET.em
 function menuOld(){$('ov').innerHTML='<div class="box"><h1>Остров мутантов</h1><p>Выживай, питайся, расти и мутируй. На каждой стадии роста выбирай мутацию: у каждой есть цена. Нутриенты усиливают тело: белки — лечение, липиды — выносливость, углеводы — скорость.</p><button class="o" onclick="start(0)">🦖 Хищник<small>Ешь туши добычи. Кусай травоядных.</small></button><button class="o" onclick="start(1)">🦕 Травоядный<small>Ешь кусты. Беги от хищников.</small></button><p style="margin-top:14px;font-size:12px;opacity:.7">WASD — ходьба, Shift — бег, Пробел — укус, E — есть и пить.</p></div>'}
 function pick(){paused=true;const o=[];while(o.length<3&&o.length<M.length-P.mu.length){const i=R()*M.length|0;if(P.mu.indexOf(i)<0&&o.indexOf(i)<0)o.push(i)}
 $('ov').innerHTML='<div class="box"><h2>Мутация</h2><p>Тело меняется. Выбери одну.</p>'+o.map(i=>'<button class="o" onclick="take('+i+')">'+M[i][0]+'<small>'+M[i][1]+'</small></button>').join('')+'</div>'}
-function take(i){P.mu.push(i);P.hp=Math.min(maxhp(),P.hp+30);paused=false;$('ov').innerHTML=''}
+function take(i){P.mu.push(i);P.hp=Math.min(maxhp(),P.hp+30*PSC());paused=false;$('ov').innerHTML=''}
 function die(){if(P.carry)relC(0);P.dead=true;paused=true;netDie();$('ov').innerHTML='<div class="box"><h2>Вы погибли</h2><p>Рост: '+(P.gr|0)+'%. Мутаций: '+P.mu.length+'.</p><button class="o" onclick="menu()">Родиться заново</button></div>'}
-function hurt(d){if(P.dead)return;P.hp-=d*(1-Math.max(-.3,Math.min(.7,m('arm')-1)))*(P.t.a>0?.3:1);P.hf=.15;if(P.hp<=0)die()}
-function bite(){if(paused||P.dead||P.cd>0)return;P.cd=P.t.fr>0?.2:.6;P.bt=.15;P.am=P.dv&&!P.carry?1:0;if(P.dv&&!P.carry)P.dv=0;if(P.lt){latchBite();return}if(P.carry){const c=P.carry;c.hp-=(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*1.3;c.fl=.12;if(c.hp<=0)killN(c);return}if(pvpHit())return;let b=null,bd=1e9;
+function hurt(d){if(P.dead)return;P.hp-=d*PSC()*(1-Math.max(-.3,Math.min(.7,m('arm')-1)))*(P.t.a>0?.3:1);P.hf=.15;if(P.hp<=0)die()}
+function bite(){if(paused||P.dead||P.cd>0)return;P.cd=P.t.fr>0?.2:.6;P.bt=.15;P.am=P.dv&&!P.carry?1:0;if(P.dv&&!P.carry)P.dv=0;if(P.lt){latchBite();return}if(P.carry){const c=P.carry;c.hp-=(c.sc||1)*rf(c)*(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*1.3;c.fl=.12;if(c.hp<=0)killN(c);return}if(pvpHit())return;let b=null,bd=1e9;
 npcs.forEach(n=>{if(n.al)return;const d=Math.hypot(n.x-P.x,n.y-P.y);if(d<P.r*2.4+n.r&&d<bd){b=n;bd=d}});
-if(b){P.a=Math.atan2(b.y-P.y,b.x-P.x);b.hp-=(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*(P.am?2:1)*(P.t.d>0?1.25:1)*(P.t.c>0?3:1)*(P.t.g>0?2:1)*bonus(b);if(P.t.c>0){P.t.c=0;b.stun=1.5}if(P.t.g>0){P.t.g=0;b.stun=3;b.bl=5}if(P.t.b>0)b.bl=5;b.fl=.12;if(b.k=='h'){b.fear=3;b.pv=6}else b.ch=1;
+if(b){P.a=Math.atan2(b.y-P.y,b.x-P.x);b.hp-=(b.sc||1)*rf(b)*(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*(P.am?2:1)*(P.t.d>0?1.25:1)*(P.t.c>0?3:1)*(P.t.g>0?2:1)*bonus(b);if(P.t.c>0){P.t.c=0;b.stun=1.5}if(P.t.g>0){P.t.g=0;b.stun=3;b.bl=5}if(P.t.b>0)b.bl=5;b.fl=.12;if(b.k=='h'){b.fear=3;b.pv=6}else b.ch=1;
 if(b.hp<=0)pkill(b)}}
 // ---------- ОБНОВЛЕНИЕ ----------
 function upd(dt){const p=P;let ix=(dn('right')?1:0)-(dn('left')?1:0)+jv.x,iy=(dn('down')?1:0)-(dn('up')?1:0)+jv.y,l=Math.hypot(ix,iy);if(l>1){ix/=l;iy/=l;l=1}
-p.r=(8+p.gr*.14)*S[p.s].sz;p.age+=dt;p.acd-=dt;for(const k in p.t)p.t[k]-=dt;p.cd-=dt;p.bt-=dt;p.hf-=dt;const mh=maxhp(),ms=160*m('stm'),sw=p.s!=8&&p.s!=11&&tile(p.x,p.y)==0,run=(hold.run||dn('run')||RT)&&l>.1&&p.st>0&&!sw;
+p.r=(8+p.gr*.14)*S[p.s].sz;p.age+=dt;p.acd-=dt;for(const k in p.t)p.t[k]-=dt;p.cd-=dt;p.bt-=dt;p.hf-=dt;const mh=maxhp();if(p.lm&&mh!=p.lm)p.hp*=mh/p.lm;p.lm=mh;const ms=160*m('stm'),sw=p.s!=8&&p.s!=11&&tile(p.x,p.y)==0,run=(hold.run||dn('run')||RT)&&l>.1&&p.st>0&&!sw;
 const sp=spx()*(p.carry?.8:1)*(p.k?100:115)*S[p.s].spd*(1-p.gr/100*.12)*m('spd')*(1+p.n[2]/100*.12)*(run?1.65:1)*(p.t.s>0?1.6:1)*(tile(p.x,p.y)==0?.5:1)*(p.s==8&&tile(p.x,p.y)<2?(tile(p.x,p.y)==0?2.4:1.4):1);
 if(p.dh>0){p.dh-=dt;mv(p,Math.cos(p.a)*440*dt,Math.sin(p.a)*440*dt);const q=npcs.find(n=>!n.held&&!n.al&&Math.hypot(n.x-p.x,n.y-p.y)<p.r+n.r+10);if(q){p.dh=0;dashHit(q)}}else if(l>.1){p.a=Math.atan2(iy,ix);mv(p,ix*sp*dt,iy*sp*dt)}
 flowM(p,p.dv?dt*.4:dt);if(p.dv&&tile(p.x,p.y)!=0)p.dv=0;p.st=sw?Math.max(0,p.st-16*dt):(run&&p.t.s<=0&&!(p.s==8&&tile(p.x,p.y)<2)?Math.max(0,p.st-12*dt):Math.min(ms,p.st+24*(1+p.n[1]/200)*dt));if(sw&&p.st<=0)hurt(8*dt);
 p.fd=Math.max(0,p.fd-.22*m('hdec')*dt*(run?1.5:1));p.wt=Math.max(0,p.wt-.32*m('tdec')*dt);for(let i=0;i<3;i++)p.n[i]=Math.max(0,p.n[i]-.25*dt);
-if(p.fd<=0||p.wt<=0)hurt(2.5*dt);else if(p.fd>30&&p.wt>30)p.hp=Math.min(mh,p.hp+1.8*m('reg')*(1+p.n[0]/100)*dt);
+if(p.fd<=0||p.wt<=0)hurt(2.5*dt);else if(p.fd>30&&p.wt>30)p.hp=Math.min(mh,p.hp+1.8*m('reg')*(1+p.n[0]/100)*dt*PSC());
 if(p.fd>35&&p.wt>35)p.gr=Math.min(100,p.gr+dt*DIF().grow*(.35+.3*(p.n[0]+p.n[1]+p.n[2])/300)*.5/Math.pow(S[p.s].sz,1.3)*(1-.4*p.gr/100));
 while(p.got<4&&p.gr>=SL[p.got]){p.got++;p.pts++}upX(dt);
 // еда и вода
@@ -171,7 +183,7 @@ if(p.s==8&&tile(p.x,p.y)==0)hint=p.dv?'Под водой · '+DK()+' — всп�
 if(sw)hint=p.st>0?'Плывёшь — выносливость тает':'ТОНЕШЬ! Выбирайся на берег';
 if(p.carry)hint=p.dv?'Топишь добычу · '+DK()+' — всплыть':'В пасти: '+BK()+' — грызть · '+DK()+' — утопить · '+AK()+' — бросить';
 // NPC
-nestUpd(dt,tg);npcs.forEach(n=>{n.cd-=dt;n.fl-=dt;n.ea-=dt;n.fear-=dt;n.wt-=dt;n.bl-=dt;if(n.bl>0)n.hp-=8*dt;if(n.held){heldUpd(n,dt);return}flowM(n,dt);if(n.stun>0){n.stun-=dt;return}ai(n,dt);return;const dx=P.x-n.x,dy=P.y-n.y,d=Math.hypot(dx,dy);let v=0,a=n.a;
+nestUpd(dt,tg);npcs.forEach(n=>{n.cd-=dt;n.fl-=dt;n.ea-=dt;n.fear-=dt;n.wt-=dt;n.bl-=dt;if(n.bl>0)n.hp-=(n.sc||1)*8*dt;if(n.held){heldUpd(n,dt);return}flowM(n,dt);if(n.stun>0){n.stun-=dt;return}ai(n,dt);return;const dx=P.x-n.x,dy=P.y-n.y,d=Math.hypot(dx,dy);let v=0,a=n.a;
 if(n.k=='p'){if(d<(n.ch?440:270)){n.ch=1;a=Math.atan2(dy,dx);v=125;if(d<n.r+P.r+8&&n.cd<=0){hurt(n.r*.65);n.cd=1.1}}else n.ch=0}
 else if((P.k==0&&d<190)||n.fear>0){a=Math.atan2(-dy,-dx);v=130;n.a=a}
 if(!v){if(n.wt<=0){n.a=R()*TAU;n.wt=2+R()*4;n.sp=R()<.3?0:1}a=n.a;v=40*n.sp}
@@ -183,7 +195,10 @@ function dino(x,y,a,r,c,fl){g.save();g.translate(x,y);g.rotate(a);g.fillStyle=fl
 g.beginPath();g.moveTo(-r*2,0);g.lineTo(-r*.6,-r*.55);g.lineTo(-r*.6,r*.55);g.fill();
 g.beginPath();g.ellipse(0,0,r*1.15,r*.8,0,0,7);g.fill();g.beginPath();g.arc(r*1.15,0,r*.5,0,7);g.fill();
 g.fillStyle='#000';g.beginPath();g.arc(r*1.3,-r*.2,r*.1,0,7);g.arc(r*1.3,r*.2,r*.1,0,7);g.fill();g.restore()}
-function bar(y,v,mx,c,t){g.fillStyle='rgba(0,0,0,.5)';g.fillRect(10,y+7,116,4);g.fillStyle=c;g.fillRect(10,y+7,116*Math.max(0,Math.min(1,v/mx)),4);g.fillStyle='rgba(230,225,211,.85)';g.font='9px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='left';g.fillText(String(t).toUpperCase(),10,y+5)}
+function bar(y,v,mx,c,t,vt){const x=14,w=156,f=Math.max(0,Math.min(1,v/mx));g.fillStyle='rgba(0,0,0,.5)';g.fillRect(x-6,y-11,w+12,21);
+g.fillStyle='rgba(255,255,255,.07)';g.fillRect(x,y+3,w,3);g.fillStyle=c;g.fillRect(x,y+3,w*f,3);g.fillStyle='rgba(0,0,0,.55)';for(let i=1;i<10;i++)g.fillRect(x+w*i/10-.5,y+3,1,3);
+g.font='10px Bahnschrift,Oswald,Roboto,Arial,sans-serif';try{g.letterSpacing='1.5px'}catch(e){}g.textAlign='left';g.fillStyle='rgba(233,228,207,.85)';g.fillText(String(t).toUpperCase(),x,y-1);
+if(vt){g.textAlign='right';g.fillStyle=c;g.fillText(vt,x+w,y-1);g.textAlign='left'}try{g.letterSpacing='0px'}catch(e){}}
 function draw(){g.fillStyle='#0f1a12';g.fillRect(0,0,W,H);if(!P)return;const cx=P.x-W/2/Z,cy=P.y-H/2/(Z*K);CX=cx;CY=cy;dr=[];
 g.save();g.scale(Z,Z*K);g.translate(-cx,-cy);
 const x0=Math.max(0,cx/T|0),x1=Math.min(N-1,(cx+W/Z)/T|0),y0=Math.max(0,cy/T|0),y1=Math.min(N-1,((cy+H/Z/K)/T+2)|0);
@@ -199,9 +214,9 @@ if(P.bt>0){g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=3;g.beginPath();g.ar
 g.restore();
 // HUD
 let y=22;const st=['Малыш','Подросток','Субвзрослый','Взрослый'][P.gr<25?0:P.gr<55?1:P.gr<85?2:3];
-bar(y,P.hp,maxhp(),'#c0463c','Здоровье');bar(y+14,P.st,160*m('stm'),'#d9b940','Выносливость');bar(y+28,P.fd,100,'#d98a3d','Сытость');bar(y+42,P.wt,100,'#3f9ad6','Вода');
-bar(y+60,P.n[0],100,'#c8607f','Белки');bar(y+74,P.n[1],100,'#c9b94e','Липиды');bar(y+88,P.n[2],100,'#6fb85a','Углеводы');bar(y+106,P.gr,100,'#cfd8c0',st);
-g.font='11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='#e9e4cf';P.mu.forEach((i,k)=>g.fillText('✦ '+M[i][0],12,y+132+k*14));
+bar(y,P.hp,maxhp(),'#c0463c','Вес · здоровье',fkg(P.hp)+' / '+fkg(maxhp()));bar(y+25,P.st,160*m('stm'),'#d9b940','Выносливость');bar(y+50,P.fd,100,'#d98a3d','Сытость');bar(y+75,P.wt,100,'#3f9ad6','Вода');
+bar(y+108,P.n[0],100,'#c8607f','Белки');bar(y+133,P.n[1],100,'#c9b94e','Липиды');bar(y+158,P.n[2],100,'#6fb85a','Углеводы');bar(y+191,P.gr,100,'#cfd8c0',st,Math.round(P.gr)+'%');
+g.font='11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='#e9e4cf';P.mu.forEach((i,k)=>g.fillText('✦ '+M[i][0],14,y+222+k*14));
 g.drawImage(mm,W-106,12,96,96);g.strokeStyle='#e9e4cf';g.strokeRect(W-106,12,96,96);g.fillStyle='#fff';g.beginPath();g.arc(W-106+P.x/WS*96,12+P.y/WS*96,3,0,7);g.fill();
 $('tb').classList.toggle('on',P.pts>0||P.sp>0);hudX();{const e=$('dv'),t2=P.dv?'ВВЕРХ':'ВНИЗ';e.style.display=P.s==8?'flex':'none';if(e.textContent!=t2)e.textContent=t2}{const a=AB[P.s],tx=P.carry?'Бросок':P.acd>0?String(Math.ceil(P.acd)):a[0],e=$('ab');if(e.textContent!=tx)e.textContent=tx;e.style.opacity=P.carry||!(P.acd>0)?1:.5}if(P.pts>0||P.sp>0){g.textAlign='center';g.font='bold 14px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText('Доступна '+(P.pts>0?'мутация':'')+(P.pts>0&&P.sp>0?' и ':'')+(P.sp>0?'навык':'')+' — Tab / ☰',W/2,H-175)}if(P.carry){const c=P.carry,bw=130,bx=W/2-bw/2,by=H-132;g.textAlign='center';g.font='9px Bahnschrift,Oswald,Roboto,Arial,sans-serif';[['Кислород добычи',c.ox,100,'#4aa8e8'],['Здоровье добычи',c.hp,c.mh,'#c0463c']].forEach((r,i)=>{const yy=by+i*15;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(bx,yy,bw,11);g.fillStyle=r[3];g.fillRect(bx,yy,bw*Math.max(0,r[1])/r[2],11);g.fillStyle='#fff';g.fillText(r[0],W/2,yy+8.5)});g.textAlign='left'}if(hint){g.textAlign='center';g.font='13px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='#e9e4cf';g.fillText(hint,W/2,H-150)}g.textAlign='left';if(NET){const tn=Date.now();FD=FD.filter(f=>tn-f.e<9000);g.textAlign='center';g.font='11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText('● '+ROOMN+' · игроков: '+(rem.size+1)+(NET.connected()?'':' · нет связи'),W/2,16);g.fillStyle='#e9e4cf';FD.forEach((f,i)=>g.fillText(f.t,W/2,32+i*13));g.textAlign='left'}}
 function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;TM=t/1000;if(P)wxTick(dt);if(P&&!paused)upd(dt);netTick(dt);draw();requestAnimationFrame(loop)}
@@ -224,17 +239,17 @@ const S=[{n:'Дейноних',k:0,c:'#c0702f',hp:.9,spd:1.12,dmg:1,sz:.9,d:'Б�
 const ML={hp:'Здоровье',spd:'Скорость',dmg:'Урон',arm:'Броня',tdec:'Жажда',hdec:'Голод',reg:'Лечение',stm:'Выносливость'},TB=['Персонаж','Мутации','Карта','Игроки','Навыки'];
 let sel=0,tabOn=false,tabN=0;const ov=$('ov');
 const sv=c=>'<svg viewBox="-60 -30 120 60" width="100%" height="120"><path d="M-55 0L-20-14V14Z" fill="'+c+'"/><ellipse rx="26" ry="18" fill="'+c+'"/><circle cx="26" r="11" fill="'+c+'"/><circle cx="31" cy="-4" r="2"/><circle cx="31" cy="4" r="2"/></svg>';
-function menu(){ov.className='mn';ov.innerHTML='<div class="ttl"><h1>ОСТРОВ</h1><i>Эволюция мутантов · v'+VER+'</i></div><div class="acc" onclick="accMenu()">'+accChip()+'</div><nav><button onclick="leaveNet();pickSp()">Одиночная игра</button><button onclick="mpMenu()">Мультиплеер</button><button onclick="accMenu()">Аккаунт</button><button onclick="difMenu(0)">Сложность: '+DIF().n+'</button><button onclick="leaveNet();saves()">Мои динозавры</button><button onclick="ctrl()">Управление</button><button onclick="clog()">Список изменений</button><small style="opacity:.6;padding:10px 14px 0">Цвет интерфейса</small><div class="sw">'+TH.map((t,i)=>'<button style="background:'+t[0]+'" class="'+(i==th?'a':'')+'" title="'+t[4]+'" onclick="applyTheme('+i+');menu()"></button>').join('')+'</div></nav>'}
+function menu(){ov.className='mn';ov.innerHTML='<div class="ttl"><h1>ОСТРОВ</h1><i>Эволюция мутантов · v'+VER+'</i></div><div class="acc" onclick="accMenu()">'+accChip()+'</div><nav><button onclick="leaveNet();pickSp()">Одиночная игра</button><button onclick="mpMenu()">Мультиплеер</button><button onclick="accMenu()">Аккаунт</button><button onclick="ctrl()">Управление</button><button onclick="clog()">Список изменений</button><small style="opacity:.6;padding:10px 14px 0">Цвет интерфейса</small><div class="sw">'+TH.map((t,i)=>'<button style="background:'+t[0]+'" class="'+(i==th?'a':'')+'" title="'+t[4]+'" onclick="applyTheme('+i+');menu()"></button>').join('')+'</div></nav>'}
 function ctrlOld(){ov.innerHTML='<div class="det" style="width:100%"><h2>Управление</h2><p>ПК: WASD — ход, Shift — бег, ЛКМ (или Пробел, J) — укус, E — способность вида (у Дейнозуха рывок: хватает динозавра в пасть, повторно — бросок), F — нырок (Дейнозух; с добычей в пасти — утопить её), Q — есть и пить (удерживай), Tab — меню персонажа.</p><p>Телефон: джойстик слева, кнопки УКУС, БЕГ, ЕСТЬ/ПИТЬ и Способность справа, ☰ — меню персонажа.</p><p>Хищники едят туши, травоядные — кусты. Пей у воды. Не водные виды в глубокой воде теряют выносливость и, когда она кончится, тонут; на реке есть мелкие броды, течение сносит. Очко мутации даётся на 20%, 40%, 65% и 90% роста.</p><p>Z и X — дополнительные способности (слоты на 15% и 50% роста, выбираются во вкладке «Навыки», там же пассивные навыки за очки). R — построить гнездо или высидеть яйцо в гнезде (союзник ИИ; в мультиплеере яйца только еда, а союзники — игроки твоей команды). Яйца можно есть (удерживай ЕСТЬ). Время суток и погода меняются; ночью и в тумане тебя хуже замечают. Съешь 5 сородичей своего вида — откроется секретная мутация.</p><button class="bk" onclick="menu()">Назад</button></div>'}
-function pickSp(){const s=S[sel],sg=v=>{const n=Math.max(1,Math.min(10,Math.round(v/1.6*10)));return'<div class="sg">'+'<i class="on"></i>'.repeat(n)+'<i></i>'.repeat(10-n)+'</div>'};ov.className='mn';ov.innerHTML='<div class="sp"><div class="lst"><h2>Выбор динозавра</h2>'+[0,1].map(k=>'<h3>'+(k?'Травоядные':'Хищники')+'</h3>'+S.map((x,i)=>x.k==k?'<button class="'+(i==sel?'a':'')+'" onclick="sel='+i+';pickSp()">'+x.n+'</button>':'').join('')).join('')+'<button class="bk" onclick="menu()">Назад</button></div><div class="det"><div id="pv" style="height:200px"></div><h2>'+s.n+'</h2><p class="tg">'+(s.k?'Травоядное':'Хищник')+(NET?' · комната '+esc(ROOMN):'')+'</p><p>'+s.d+'</p><p class="tg">Способность: '+AB[sel][0]+' — '+AB[sel][3]+'</p>'+[['Здоровье','hp'],['Скорость','spd'],['Урон','dmg']].map(t=>'<div class="st"><span>'+t[0]+'</span>'+sg(s[t[1]])+'</div>').join('')+'<button class="go" onclick="start(sel)">Родиться</button></div></div>'}
+function pickSp(){const s=S[sel],sg=v=>{const n=Math.max(1,Math.min(10,Math.round(v/1.6*10)));return'<div class="sg">'+'<i class="on"></i>'.repeat(n)+'<i></i>'.repeat(10-n)+'</div>'};ov.className='mn';ov.innerHTML='<div class="sp"><div class="lst"><h2>Выбор динозавра</h2>'+[0,1].map(k=>'<h3>'+(k?'Травоядные':'Хищники')+'</h3>'+S.map((x,i)=>x.k==k?'<button class="'+(i==sel?'a':'')+'" onclick="sel='+i+';pickSp()">'+x.n+'</button>':'').join('')).join('')+'<button class="bk" onclick="menu()">Назад</button></div><div class="det"><div id="pv" style="height:200px"></div><h2>'+s.n+'</h2><p class="tg">'+(s.k?'Травоядное':'Хищник')+(NET?' · комната '+esc(ROOMN):'')+'</p><p>'+s.d+'</p><p class="tg">Способность: '+AB[sel][0]+' — '+AB[sel][3]+'</p>'+[['Скорость','spd'],['Урон','dmg']].map(t=>'<div class="st"><span>'+t[0]+'</span>'+sg(s[t[1]])+'</div>').join('')+'<div class="kv"><span>Вес = здоровье</span><b>'+fkg(MASS[sel])+'</b></div><button class="go" onclick="start(sel)">Родиться</button></div></div>'}
 const stg=()=>['Малыш','Подросток','Субвзрослый','Взрослый'][P.gr<25?0:P.gr<55?1:P.gr<85?2:3];
 const nb=(l,v,c,n)=>'<div class="nb"><span>'+l+'</span><i><b style="width:'+Math.max(0,Math.min(100,v))+'%;background:'+c+'"></b></i><em>'+n+'</em></div>';
 function toggleTab(){if(!P||P.dead||(paused&&!tabOn))return;tabOn=!tabOn;paused=tabOn&&!NET;if(tabOn)tabUi();else{ov.className='';ov.innerHTML=''}}
 $('tb').onclick=toggleTab;
-function take2(i){P.mu.push(i);P.pts--;P.hp=Math.min(maxhp(),P.hp+20);tabUi()}
+function take2(i){P.mu.push(i);P.pts--;P.hp=Math.min(maxhp(),P.hp+20*PSC());tabUi()}
 function tabUi(){const p=P,s=S[p.s];let b='';
 if(tabN==0){const sp=Math.round((p.k?100:115)*s.spd*(1-p.gr/100*.12)*m('spd')*(1+p.n[2]/100*.12)),dm=Math.round((p.k?11:18)*s.dmg*(.5+p.gr/100)*m('dmg')),mh=maxhp();
-b='<div class="row2"><div><h2>'+s.n+'</h2>'+[['Стадия',stg()],['Вес',Math.round(3+p.gr*p.gr*.012)+' кг'],['Возраст',Math.floor(p.age/60)+' мин'],['Здоровье',Math.round(p.hp)+' / '+Math.round(mh)],['Скорость',sp],['Урон укуса',dm],['Броня',Math.round((m('arm')-1)*100)+'%'],['Способность',AB[p.s][0]+' · '+AB[p.s][1]+' с']].map(r=>'<div class="kv"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('')+'</div><div>'+nb('Рост',p.gr,'#cfd8c0','Растёт, пока сыт и не мучает жажда')+nb('Сытость',p.fd,'#d98a3d','')+nb('Вода',p.wt,'#3f9ad6','')+nb('Белки',p.n[0],'#c8607f','Ускоряют лечение')+nb('Липиды',p.n[1],'#c9b94e','Восстанавливают выносливость')+nb('Углеводы',p.n[2],'#6fb85a','Добавляют скорость')+'</div></div><button class="go" onclick="saveDino()">💾 Сохранить дино</button><p class="tg">'+SVM+'</p>'}
+b='<div class="row2"><div><h2>'+s.n+'</h2>'+[['Стадия',stg()],['Вес',Math.round(3+p.gr*p.gr*.012)+' кг'],['Возраст',Math.floor(p.age/60)+' мин'],['Вес = здоровье',fkg(p.hp)+' / '+fkg(mh)],['Скорость',sp],['Урон укуса',dm],['Броня',Math.round((m('arm')-1)*100)+'%'],['Способность',AB[p.s][0]+' · '+AB[p.s][1]+' с']].map(r=>'<div class="kv"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('')+'</div><div>'+nb('Рост',p.gr,'#cfd8c0','Растёт, пока сыт и не мучает жажда')+nb('Сытость',p.fd,'#d98a3d','')+nb('Вода',p.wt,'#3f9ad6','')+nb('Белки',p.n[0],'#c8607f','Ускоряют лечение')+nb('Липиды',p.n[1],'#c9b94e','Восстанавливают выносливость')+nb('Углеводы',p.n[2],'#6fb85a','Добавляют скорость')+'</div></div>'}
 else if(tabN==1){b=hexTab();if(0)b='<p class="pts">Очки мутаций: <b>'+p.pts+'</b> · занято слотов '+p.mu.length+' из 3<small>'+(p.got<3?'Следующее очко на '+[25,55,85][p.got]+'% роста':'Все очки получены')+'</small></p><div class="cards">'+M.map((x,i)=>{const own=p.mu.indexOf(i)>=0;return'<div class="mc'+(own?' own':'')+'"><h4>'+x[0]+'</h4>'+Object.keys(x[2]).map(k=>{const v=x[2][k],gd=(k=='tdec'||k=='hdec')?v<0:v>0;return'<div class="'+(gd?'g':'r')+'">'+(gd?'+ ':'− ')+ML[k]+' '+(v>0?'+':'−')+Math.round(Math.abs(v)*100)+'%</div>'}).join('')+(own?'<span class="ok">Приобретена</span>':'<button '+(p.pts>0?'':'disabled')+' onclick="take2('+i+')">Мутировать</button>')+'</div>'}).join('')+'</div>'}
 else if(tabN==3)b=plHtml2();else if(tabN==4)b=skHtml();else b='<canvas id="mp" width="300" height="300"></canvas>';
 ov.className='tb';ov.innerHTML='<div class="tab"><div class="tabs">'+TB.map((t,i)=>'<button class="'+(i==tabN?'a':'')+'" onclick="tabN='+i+';tabUi()">'+t+(i==1&&p.pts>0||i==4&&p.sp>0?' ●':'')+'</button>').join('')+'<button class="x" onclick="toggleTab()">✕</button></div><div class="body">'+b+'</div></div>';
@@ -283,7 +298,7 @@ dr.forEach(d=>{const t=d[1],x=d[2],y=d[3],o=d[4];g.save();g.translate((x-CX)*Z,(
 if(t==5)tree(x,y);else if(t==6)rock(x,y);else if(t==7)bush(o);else if(t==8)carc(o);else if(t==12)drawNest(o);
 else if(t==9){const sub=o.ty==8&&o.dv&&!o.held,vis=!sub||sniffOn()||P.s==8;if(o.held)g.translate(0,-P.r*.8);if(o.held&&P.dv)g.globalAlpha=.45;if(sub)g.globalAlpha=.38;if(o.sp>0){g.save();g.globalAlpha=o.sp*.7;g.strokeStyle='#e1f5ff';g.lineWidth=2.5;const rr=o.r+(1-o.sp)*o.r*4.5;g.beginPath();g.ellipse(0,0,rr,rr*K,0,0,7);g.stroke();g.restore()}if(vis)dino(dAng(o),o.r,o.c,o.fl,o.ty,o.ea>0,dPh(o,x,y));g.globalAlpha=1;if(o.held){const by=-o.r*2.4-8;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(-17,by,34,6);g.fillStyle='#4aa8e8';g.fillRect(-16,by+1,32*Math.max(0,o.ox)/100,4)}}else{if(o.dv)g.globalAlpha=.4;dino(o===P?o.a:dAng(o),o.r,S[o.s].c,o.hf,o.s,o.bt>0,dPh(o,x,y));g.globalAlpha=1}if(t==11)tag(o);if(t==9&&o.al)aTag(o);g.restore()})}
 const det=(i,can)=>{const x=M[i];return'<div class="dt"><h4>'+IC[i]+' '+x[0]+'</h4>'+Object.keys(x[2]).map(k=>{const v=x[2][k],gd=(k=='tdec'||k=='hdec')?v<0:v>0;return'<div class="'+(gd?'g':'r')+'">'+(gd?'+ ':'− ')+ML[k]+' '+(v>0?'+':'−')+Math.round(Math.abs(v)*100)+'%</div>'}).join('')+(M[i][3]||[]).map(t=>'<div class="g">✦ '+t+'</div>').join('')+(can?'<button '+(P.pts>0?'':'disabled')+' onclick="take3()">Мутировать слот '+(selS+1)+'</button>':'')+'</div>'};
-function take3(){if(selS<0||selM<0||P.pts<1||P.sl[selS]!=null||P.mu.indexOf(selM)>=0||!mAv(selM))return;P.sl[selS]=selM;P.mu.push(selM);P.pts--;P.hp=Math.min(maxhp(),P.hp+20);tabUi()}
+function take3(){if(selS<0||selM<0||P.pts<1||P.sl[selS]!=null||P.mu.indexOf(selM)>=0||!mAv(selM))return;P.sl[selS]=selM;P.mu.push(selM);P.pts--;P.hp=Math.min(maxhp(),P.hp+20*PSC());tabUi()}
 function hexTab(){const p=P,ps=[[0,0],[96,0],[48,83],[144,83]];
 let h='<p class="pts">Очки мутаций: <b>'+p.pts+'</b><small>'+(p.got<4?'Следующий слот откроется на '+SL[p.got]+'% роста':'Все слоты открыты')+'</small></p><div class="hw">'+ps.map((q,i)=>{const mi=p.sl[i],lk=i>=p.got;return'<button class="hx'+(mi!=null?' own':'')+(i==selS?' s':'')+'" style="left:'+q[0]+'px;top:'+q[1]+'px" onclick="selS='+i+';selM='+(mi!=null?mi:-1)+';tabUi()"><i>'+(lk?'<span>🔒</span>'+SL[i]+'%':mi!=null?'<span>'+IC[mi]+'</span>'+M[mi][0]:'<span>＋</span>Свободно')+'</i></button>'}).join('')+'</div>';
 if(selS<0)h+='<p style="text-align:center;opacity:.6;font-size:13px">Выбери шестиугольник-слот</p>';
@@ -292,12 +307,12 @@ else{const mi=p.sl[selS];if(mi==null)h+='<div class="dt"><b>Выбери мут�
 if(selM>=0)h+=det(selM,mi==null)}
 return h+secBox()}
 const near=(d,f)=>npcs.filter(n=>!n.al&&Math.hypot(n.x-P.x,n.y-P.y)<d).forEach(f);
-const AB=[['Прыжок',10,()=>{P.dh=.3},'прыжок на врага: вцепляешься и кусаешь до 7 раз подряд (повторно — отпустить)'],['Рёв',20,()=>{P.t.d=6;near(350,n=>{if(n.k=='h')n.fear=5})},'пугает травоядных, урон +25% на 6 с'],['Спурт',15,()=>{P.t.s=5;P.st=160*m('stm')},'скорость +60% на 5 с'],['Таран',14,()=>{P.dh=.35},'таран с оглушением, урон ×2.2'],['Кровотечение',18,()=>{P.t.b=8},'укусы вызывают кровотечение 8 с'],['Сокрушение',22,()=>{P.t.c=8},'следующий укус ×3 и оглушение'],['Зов',22,()=>{P.hp=Math.min(maxhp(),P.hp+25);near(420,n=>{if(n.k=='p'){n.stun=4;n.ch=0}})},'оглушает хищников, лечит 25'],['Панцирь',20,()=>{P.t.a=6},'урон по вам −70% на 6 с']];
+const AB=[['Прыжок',10,()=>{P.dh=.3},'прыжок на врага: вцепляешься и кусаешь до 7 раз подряд (повторно — отпустить)'],['Рёв',20,()=>{P.t.d=6;near(350,n=>{if(n.k=='h')n.fear=5})},'пугает травоядных, урон +25% на 6 с'],['Спурт',15,()=>{P.t.s=5;P.st=160*m('stm')},'скорость +60% на 5 с'],['Таран',14,()=>{P.dh=.35},'таран с оглушением, урон ×2.2'],['Кровотечение',18,()=>{P.t.b=8},'укусы вызывают кровотечение 8 с'],['Сокрушение',22,()=>{P.t.c=8},'следующий укус ×3 и оглушение'],['Зов',22,()=>{P.hp=Math.min(maxhp(),P.hp+25*PSC());near(420,n=>{if(n.k=='p'){n.stun=4;n.ch=0}})},'оглушает хищников, лечит 25'],['Панцирь',20,()=>{P.t.a=6},'урон по вам −70% на 6 с']];
 function useAb(){if(paused||!P||P.dead)return;if(P.lt){P.lt=null;P.acd=Math.max(P.acd,2);return}P.dv=0;if(P.carry){throwC();return}if(P.acd>0)return;if(AB[P.s][2]()===false)return;P.acd=AB[P.s][1]}
 function killN(b){if(P&&P.lt===b)P.lt=null;if(P&&P.carry===b){P.carry=null;b.held=0}const i=npcs.indexOf(b);if(i<0)return;npcs.splice(i,1);if(!b.nc)cars.push({x:b.x,y:b.y,l:b.k=='p'?220:110,t:100,r:b.r*1.1,q:(NQ[b.ty]||[.45,.4,.15]).slice(),l0:(b.k=='p'?220:110),ty:b.ty});if(!b.al)respawn(b)}
 function dashHit(q){const bd=(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg');if(P.s==0&&!P.carry){latchOn(q,bd);return}if(dashX(q,bd))return;
-if(P.s==8&&!P.carry&&q.r<=P.r*1.2+2){q.hp-=bd*.6;if(q.hp<=0){killN(q);return}P.carry=q;q.held=1;q.ox=100;q.ht=0;q.hc=0;q.stun=0;q.fear=0;q.ch=0;q.fl=.12}
-else{q.hp-=bd*(P.s==3?2.2:1.8);q.fl=.12;q.stun=1.2;if(q.k=='h')q.fear=3;else q.ch=1;if(q.hp<=0)killN(q)}}
+if(P.s==8&&!P.carry&&q.r<=P.r*1.2+2){q.hp-=(q.sc||1)*bd*.6;if(q.hp<=0){killN(q);return}P.carry=q;q.held=1;q.ox=100;q.ht=0;q.hc=0;q.stun=0;q.fear=0;q.ch=0;q.fl=.12}
+else{q.hp-=(q.sc||1)*bd*(P.s==3?2.2:1.8);q.fl=.12;q.stun=1.2;if(q.k=='h')q.fear=3;else q.ch=1;if(q.hp<=0)killN(q)}}
 function relC(esc){const n=P.carry;if(!n)return;P.carry=null;n.held=0;if(solid(n.x,n.y)){n.x=P.x;n.y=P.y}n.stun=esc?.8:2.5;if(n.k=='h')n.fear=5;else n.ch=1;n.fl=.12}
 function throwC(){const n=P.carry;if(!n)return;const d=P.r*2.5+n.r+34,x=P.x+Math.cos(P.a)*d,y=P.y+Math.sin(P.a)*d;relC(0);if(!solid(x,y)){n.x=x;n.y=y}P.acd=Math.max(P.acd,3);n.hp-=n.mh*.15;n.fl=.2;if(n.hp<=0)killN(n)}
 function heldUpd(n,dt){const p=P,d=p.r*2.1+n.r*.8;if(!p.dv)n.ht+=dt;n.hc+=dt;n.ox=p.dv?Math.max(0,n.ox-(n.k=='p'?9:15)*dt):Math.min(100,n.ox+35*dt);if(n.ox<=0){killN(n);return}n.x=p.x+Math.cos(p.a)*d;n.y=p.y+Math.sin(p.a)*d;n.a=p.a+1.5708;if(n.hc>=1.1){n.hc=0;hurt(n.r*(n.k=='p'?.45:.12))}if(P.carry===n&&n.ht>(n.k=='p'?7:11))relC(1)}
@@ -349,11 +364,11 @@ if(n.ty==8&&n.hg<90){let bf=null,bd=620;npcs.forEach(q=>{if(q.k=='h'&&q.hp>0&&!q
 cars.forEach(c=>{if(c.l>0){const e=Math.hypot(c.x-n.x,c.y-n.y);if(e<cd){cz=c;cd=e}}});
 if(vi&&d<(n.ch?450:280)*vf&&(!tg||d<td)){tg=P;td=d;n.ch=1}else if(!vi&&d>350)n.ch=0;
 if(low&&d<320){a=Math.atan2(-dy,-dx);v=118}else if(n.tr>0){v=0}
-else if(cz&&!n.ch&&(!tg||cd<td)){a=Math.atan2(cz.y-n.y,cz.x-n.x);if(cd<n.r+cz.r*1.4+8){ea=1;n.a=a;cz.l-=Math.min(cz.l,22*dt);n.hg=Math.min(100,n.hg+9*dt);n.hp=Math.min(n.mh,n.hp+4*dt)}else v=cd<200&&n.en>6?(150-n.r*1.6):62}
+else if(cz&&!n.ch&&(!tg||cd<td)){a=Math.atan2(cz.y-n.y,cz.x-n.x);if(cd<n.r+cz.r*1.4+8){ea=1;n.a=a;cz.l-=Math.min(cz.l,22*dt);n.hg=Math.min(100,n.hg+9*dt);n.hp=Math.min(n.mh,n.hp+4*dt*(n.sc||1))}else v=cd<200&&n.en>6?(150-n.r*1.6):62}
 else if(tg){a=Math.atan2(tg.y-n.y,tg.x-n.x);const ch=td<230&&n.en>6;v=ch?(150-n.r*1.6)*1.15:50;n.rn=ch?1:0;if(n.en<=6)n.tr=2.5;
-if(td<n.r+tg.r+8&&n.cd<=0){n.cd=1.1;if(tg===P)hurt(n.r*.5);else{tg.hp-=n.r*1.1;tg.fear=3;tg.fl=.12;if(tg.hp<=0)n.hg=Math.min(n.hg,55)}}}}
+if(td<n.r+tg.r+8&&n.cd<=0){n.cd=1.1;if(tg===P)hurt(n.r*.5);else{tg.hp-=(tg.sc||1)*n.r*1.1;tg.fear=3;tg.fl=.12;if(tg.hp<=0)n.hg=Math.min(n.hg,55)}}}}
 if(!v&&!ea&&!(n.tr>0)){if(n.tk<=0){n.tk=2+R()*4;n.wd=R()<.35?0:1;let na=R()*TAU;if(h){let sx=0,sy=0,c=0;npcs.forEach(q=>{if(q.k=='h'&&q!==n&&Math.hypot(q.x-n.x,q.y-n.y)<260){sx+=q.x;sy+=q.y;c++}});if(c&&Math.hypot(sx/c-n.x,sy/c-n.y)>70)na=Math.atan2(sy/c-n.y,sx/c-n.x)+(R()-.5)}if(n.sw>5)na=Math.atan2(WS/2-n.y,WS/2-n.x)+(R()-.5)*.6;n.a=na}
-a=n.a;v=n.wd?(h?42:38):0;if(!h)n.hp=Math.min(n.mh,n.hp+1.5*dt)}
+a=n.a;v=n.wd?(h?42:38):0;if(!h)n.hp=Math.min(n.mh,n.hp+1.5*dt*(n.sc||1))}
 if(ea)n.ea=.25;if(v>0)steer(n,a,v,dt)}
 // ====================== РАСШИРЕНИЕ ======================
 // ---------- мутации ----------
@@ -390,17 +405,17 @@ const PSL=[10,30,50,70,90],ASL=[15,50];
 // ---------- дополнительные способности ----------
 const dmgB=()=>(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg');
 const AX=[
-{id:'tl',n:'Хвостовой удар',s:'Хвост',i:'🌀',k:2,cd:12,d:'удар по всем рядом: урон и оглушение',f(){P.bt=.2;near(P.r*3.4+30,n=>{n.hp-=dmgB()*.8;n.stun=.9;n.fl=.12;if(n.k=='h')n.fear=3;else n.ch=1;if(n.hp<=0)pkill(n)})}},
-{id:'sw',n:'Второе дыхание',s:'Дыхание',i:'💨',k:2,cd:35,d:'полная выносливость, лечение 30 и ускорение на 4 с',f(){P.st=160*m('stm');P.hp=Math.min(maxhp(),P.hp+30);P.t.v=4}},
+{id:'tl',n:'Хвостовой удар',s:'Хвост',i:'🌀',k:2,cd:12,d:'удар по всем рядом: урон и оглушение',f(){P.bt=.2;near(P.r*3.4+30,n=>{n.hp-=(n.sc||1)*dmgB()*.8;n.stun=.9;n.fl=.12;if(n.k=='h')n.fear=3;else n.ch=1;if(n.hp<=0)pkill(n)})}},
+{id:'sw',n:'Второе дыхание',s:'Дыхание',i:'💨',k:2,cd:35,d:'полная выносливость, лечение 30 и ускорение на 4 с',f(){P.st=160*m('stm');P.hp=Math.min(maxhp(),P.hp+30*PSC());P.t.v=4}},
 {id:'in',n:'Инстинкт',s:'Чутьё',i:'👃',k:2,cd:40,d:'на 15 с показывает всех динозавров вокруг',f(){P.t.sn=15}},
 {id:'cl',n:'Зов стаи',s:'Стая',i:'📣',k:2,cd:45,d:'призывает союзников к тебе и лечит их',f(){const a=npcs.filter(n=>n.al);if(!a.length){msg('Нет союзников: высиди яйцо в гнезде (R)');return false}a.forEach((n,i)=>{n.x=P.x+Math.cos(i*1.7)*(P.r*2.5+n.r+10);n.y=P.y+Math.sin(i*1.7)*(P.r*2.5+n.r+10);n.hp=n.mh;if(solid(n.x,n.y)){n.x=P.x;n.y=P.y}})}},
 {id:'rg',n:'Кровавая ярость',s:'Ярость',i:'🩸',k:0,cd:30,d:'8 с: урон ×1.5 и скорость +15%',f(){P.t.rg=8}},
 {id:'hd',n:'Засада',s:'Засада',i:'🫥',k:0,cd:28,d:'7 с тебя почти не замечают; первый укус ×2.5',f(){P.t.hd=7}},
-{id:'st',n:'Топот',s:'Топот',i:'🦶',k:1,cd:22,d:'оглушает всех рядом, пугает травоядных, ранит хищников',f(){near(190,n=>{n.stun=1.6;if(n.k=='h')n.fear=4;else{n.hp-=dmgB()*.4;n.ch=1;n.fl=.12;if(n.hp<=0)pkill(n)}})}}];
+{id:'st',n:'Топот',s:'Топот',i:'🦶',k:1,cd:22,d:'оглушает всех рядом, пугает травоядных, ранит хищников',f(){near(190,n=>{n.stun=1.6;if(n.k=='h')n.fear=4;else{n.hp-=(n.sc||1)*dmgB()*.4;n.ch=1;n.fl=.12;if(n.hp<=0)pkill(n)}})}}];
 const AXD={};AX.forEach(a=>AXD[a.id]=a);
 function useAx(i){if(paused||!P||P.dead)return;if(P.gr<ASL[i])return;const id=P.xs[i];if(!id){if(!tabOn)toggleTab();tabN=4;tabUi();return}if(P.xcd[i]>0)return;P.dv=0;if(AXD[id].f()===false)return;P.xcd[i]=AXD[id].cd}
 function setAx(i,id){const o=1-i;if(P.xs[o]===id)P.xs[o]=null;P.xs[i]=id;tabUi()}
-function takePs(id){if(P.sp<1||P.ps.indexOf(id)>=0)return;const a=PSX[id];if(!a||(a.k!=2&&a.k!==P.k))return;P.ps.push(id);P.sp--;P.hp=Math.min(maxhp(),P.hp+15);tabUi()}
+function takePs(id){if(P.sp<1||P.ps.indexOf(id)>=0)return;const a=PSX[id];if(!a||(a.k!=2&&a.k!==P.k))return;P.ps.push(id);P.sp--;P.hp=Math.min(maxhp(),P.hp+15*PSC());tabUi()}
 function skHtml(){const p=P;let h='<p class="pts">Очки навыков: <b>'+p.sp+'</b><small>'+(p.gs<PSL.length?'Следующее очко на '+PSL[p.gs]+'% роста':'Все очки получены')+'</small></p><h2>Способности</h2><div class="kv"><span>Q · '+AB[p.s][0]+'</span><b>способность вида · '+AB[p.s][1]+' с</b></div>';
 [0,1].forEach(i=>{const un=p.gr>=ASL[i];h+='<div class="dt"><h4>'+['Z','X'][i]+' · слот '+(i+1)+(un?'':' 🔒 откроется на '+ASL[i]+'%')+'</h4>';
 if(un){h+='<div class="ml">'+AX.filter(a=>a.k==2||a.k===p.k).map(a=>'<button class="mb'+(p.xs[i]==a.id?' s':'')+'" onclick="setAx('+i+',\''+a.id+'\')">'+a.i+' '+a.n+'</button>').join('')+'</div>';const c=p.xs[i]&&AXD[p.xs[i]];h+=c?'<div>'+c.d+' · перезарядка '+c.cd+' с</div>':'<div style="opacity:.6">Выбери способность для этого слота</div>'}
@@ -411,12 +426,12 @@ function bonus(b){let f=1;const p=P;if(p.t.rg>0)f*=1.5;if(p.t.hd>0){f*=2.5;p.t.h
 function pkill(b){killN(b);if(hasPs('hz'))P.t.hk=5}
 function spx(){let f=1;const p=P;if(p.t.rg>0)f*=1.15;if(p.t.v>0)f*=1.3;if(p.t.hk>0)f*=1.25;if(p.s==11){const tl=tile(p.x,p.y);if(tl==0)f*=1.9;else if(tl==1)f*=1.2}if(wx.rain>.05&&!hasPs('wx'))f*=1-.07*Math.min(1,wx.rain);if(hasPs('pb')&&p.hp<maxhp()*.35)f*=1.25;return f}
 function eatT(tg,dt){const p=P,car=!p.k,sp=car&&hasPs('sc')?1.4:1,a=Math.min(tg.l,30*dt*sp),cb=car&&hasMu(10)?1.4:1;tg.l-=a;p.fd=Math.min(100,p.fd+a*.55*cb);for(let i=0;i<3;i++)p.n[i]=Math.min(100,p.n[i]+a*tg.q[i]*1.1*cb);
-if(car&&hasMu(8))p.hp=Math.min(maxhp(),p.hp+a*.6);
-if(car&&tg.ty===p.s){if(hasMu(10))p.hp=Math.min(maxhp(),p.hp+a*.5);if(!tg.cn){tg.ea2=(tg.ea2||0)+a;if(tg.ea2>=35){tg.cn=1;p.cnb++;if(!hasMu(10)){if(p.cnb>=5)unlockCan();else msg('Сородичей съедено: '+p.cnb+'/5')}}}}
+if(car&&hasMu(8))p.hp=Math.min(maxhp(),p.hp+a*.6*PSC());
+if(car&&tg.ty===p.s){if(hasMu(10))p.hp=Math.min(maxhp(),p.hp+a*.5*PSC());if(!tg.cn){tg.ea2=(tg.ea2||0)+a;if(tg.ea2>=35){tg.cn=1;p.cnb++;if(!hasMu(10)){if(p.cnb>=5)unlockCan();else msg('Сородичей съедено: '+p.cnb+'/5')}}}}
 if(tg.l<=0)tg.t=p.k?45:0}
-function unlockCan(){P.mu.push(10);P.hp=Math.min(maxhp(),P.hp+40);msg('🧬 Секретная мутация открыта: КАННИБАЛИЗМ!');if(NET)NET.emit('feed',{t:NICK+' стал каннибалом'}).catch(()=>{})}
-function mkCroc(kin){let x,y,k=0;do{x=R()*WS;y=R()*WS;k++}while(tile(x,y)!=0&&k<3000);const n=mkNpc('p',0);n.x=x;n.y=y;n.ty=8;n.c=S[8].c;n.r=RAD[8]*.8;n.hp=n.mh=n.r*8;n.wb=1;n.dv=1;n.sf=0;n.rs=6+R()*40;if(kin)n.kin=1;return n}
-function mkKin(ty){if(ty==8)return mkCroc(1);const n=mkNpc('p',1);n.ty=ty;n.c=S[ty].c;n.r=RAD[ty]*.85;n.hp=n.mh=n.r*7;n.kin=1;return n}
+function unlockCan(){P.mu.push(10);P.hp=Math.min(maxhp(),P.hp+40*PSC());msg('🧬 Секретная мутация открыта: КАННИБАЛИЗМ!');if(NET)NET.emit('feed',{t:NICK+' стал каннибалом'}).catch(()=>{})}
+function mkCroc(kin){let x,y,k=0;do{x=R()*WS;y=R()*WS;k++}while(tile(x,y)!=0&&k<3000);const n=mkNpc('p',0);n.x=x;n.y=y;n.ty=8;n.c=S[8].c;n.r=RAD[8]*.8;n.mh=n.hp=MASS[8]*.51;n.sc=n.mh/(n.r*8);n.wb=1;n.dv=1;n.sf=0;n.rs=6+R()*40;if(kin)n.kin=1;return n}
+function mkKin(ty){if(ty==8)return mkCroc(1);const n=mkNpc('p',1);n.ty=ty;n.c=S[ty].c;n.r=RAD[ty]*.85;n.mh=n.hp=MASS[ty]*.614;n.sc=n.mh/(n.r*7);n.kin=1;return n}
 function respawn(b){const k=b.k,ty=b.ty,kin=b.kin;setTimeout(()=>{if(kin){if(P&&!P.dead&&P.s===ty)npcs.push(mkKin(ty))}else npcs.push(ty==8?mkCroc():mkNpc(k,1))},40000)}
 function secBox(){if(P.k)return'';if(hasMu(10))return det(10,0);return'<div class="dt" style="margin-top:12px"><h4>🔒 Секретная мутация</h4><span style="opacity:.75">'+(P.cnb>0?'Что-то меняется в твоей крови… Сородичей съедено: '+P.cnb+'.':'Говорят, хищник, отведавший плоти себе подобных, меняется навсегда…')+'</span></div>'}
 // ---------- нюх ----------
@@ -450,12 +465,12 @@ drawSniff()}
 // ---------- гнёзда, яйца, союзники ----------
 const HATCH=30,EGGMAX=3,ALLYMAX=4;
 function mkNest(x,y,ty,own,n){const e=[];for(let i=0;i<n;i++)e.push({ty,h:0,inc:0});return{x,y,ty,own,e,rt:90+R()*60,ex:0}}
-function initWorldX(si){SLOT=null;SVM='';OFF=NET?0:.3*DAYLEN-(Date.now()/1000)%DAYLEN;TS.length=0;nests=[];NH=null;for(let i=0;i<78;i++){const[x,y]=rp();nests.push(mkNest(x,y,R()*17|0,0,2+(R()*2|0)))}
+function initWorldX(si){OFF=NET?0:.3*DAYLEN-(Date.now()/1000)%DAYLEN;TS.length=0;nests=[];NH=null;for(let i=0;i<78;i++){const[x,y]=rp();nests.push(mkNest(x,y,R()*17|0,0,2+(R()*2|0)))}
 if(si!=8)for(let i=0,n2=DIF().crocs;i<n2;i++)npcs.push(mkCroc())
 if(!S[si].k)for(let i=0;i<8;i++)npcs.push(mkKin(si))}
-function mkAlly(ty,x,y){const k=S[ty].k?'h':'p',r0=RAD[ty],n=mkNpc(k,0),mh=r0*(k=='p'?9:4)*.5;Object.assign(n,{x,y,ty,al:1,c:S[ty].c,r0,r:r0*.5,mh,hp:mh,age:0,tk:0,stun:0});return n}
+function mkAlly(ty,x,y){const k=S[ty].k?'h':'p',r0=RAD[ty],n=mkNpc(k,0),mh=MASS[ty]*.125;Object.assign(n,{sc:mh/(r0*(k=='p'?9:4)*.5),x,y,ty,al:1,c:S[ty].c,r0,r:r0*.5,mh,hp:mh,age:0,tk:0,stun:0});return n}
 function hatch(n,e){const a=mkAlly(e.ty,n.x+(R()-.5)*30,n.y+(R()-.5)*30);npcs.push(a);msg('🐣 Вылупился союзник: '+S[e.ty].n)}
-function eatEgg(n){let i=n.e.findIndex(e=>!e.inc);if(i<0)i=n.e.length-1;if(i<0)return;n.e.splice(i,1);const p=P,f=hasPs('nr')?1.5:1;p.fd=Math.min(100,p.fd+16*f);p.n[0]=Math.min(100,p.n[0]+26*f);p.n[1]=Math.min(100,p.n[1]+14*f);p.n[2]=Math.min(100,p.n[2]+4*f);if(!p.k&&hasMu(8))p.hp=Math.min(maxhp(),p.hp+14)}
+function eatEgg(n){let i=n.e.findIndex(e=>!e.inc);if(i<0)i=n.e.length-1;if(i<0)return;n.e.splice(i,1);const p=P,f=hasPs('nr')?1.5:1;p.fd=Math.min(100,p.fd+16*f);p.n[0]=Math.min(100,p.n[0]+26*f);p.n[1]=Math.min(100,p.n[1]+14*f);p.n[2]=Math.min(100,p.n[2]+4*f);if(!p.k&&hasMu(8))p.hp=Math.min(maxhp(),p.hp+14*PSC())}
 function nestUpd(dt,tg){const p=P;
 for(const n of nests){if(!n.own&&n.e.length<EGGMAX){n.rt-=dt;if(n.rt<=0){n.e.push({ty:n.ty,h:0,inc:0});n.rt=100+R()*60}}
 const dp=Math.hypot(n.x-p.x,n.y-p.y);for(let i=n.e.length-1;i>=0;i--){const e=n.e[i];if(e.inc){if(dp<300)e.h+=dt*(hasPs('nr')?1.5:1);if(e.h>=HATCH){n.e.splice(i,1);hatch(n,e)}}}
@@ -479,18 +494,18 @@ n.e.forEach((e,i)=>{const a=i/Math.max(3,n.e.length)*TAU+.6;g.save();g.translate
 g.fillStyle='#efe6cf';g.beginPath();g.ellipse(0,0,5,7,0,0,7);g.fill();g.fillStyle=sh(S[e.ty].c,.85);g.beginPath();g.arc(-1.5,-2,1.3,0,7);g.arc(1.5,2,1.1,0,7);g.fill();
 if(e.inc){g.strokeStyle='#ffd75a';g.lineWidth=1.6;g.beginPath();g.arc(0,0,10,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,e.h/HATCH));g.stroke()}g.restore()})}
 function aTag(o){const y=-o.r*2.3-8;g.fillStyle='rgba(0,0,0,.55)';g.fillRect(-14,y,28,4);g.fillStyle='#ffd75a';g.fillRect(-13,y+1,26*Math.max(0,o.hp)/o.mh,2);g.beginPath();g.moveTo(0,y-9);g.lineTo(4,y-5);g.lineTo(0,y-1);g.lineTo(-4,y-5);g.closePath();g.fill()}
-function allyAi(n,dt){if(n.life!=null){n.life-=dt;if(n.life<=0){n.hp=0;return}}n.age=(n.age||0)+dt;n.tk=(n.tk||0)-dt;const gf=Math.min(1,n.age/(hasPs('nr')?70:110)),pr=n.k=='p',pw=hasPs('nr')?1.3:1,mhT=n.r0*(pr?9:4)*(.5+.5*gf);n.r=n.r0*(.5+.5*gf);if(mhT>n.mh){n.hp+=mhT-n.mh;n.mh=mhT}n.hp=Math.min(n.mh,n.hp+1.2*dt);
+function allyAi(n,dt){if(n.life!=null){n.life-=dt;if(n.life<=0){n.hp=0;return}}n.age=(n.age||0)+dt;n.tk=(n.tk||0)-dt;const gf=Math.min(1,n.age/(hasPs('nr')?70:110)),pr=n.k=='p',pw=hasPs('nr')?1.3:1,mhT=MASS[n.ty]*Math.pow(.5+.5*gf,3);n.sc=mhT/(n.r0*(pr?9:4)*(.5+.5*gf));n.r=n.r0*(.5+.5*gf);if(mhT>n.mh){n.hp+=mhT-n.mh;n.mh=mhT}n.hp=Math.min(n.mh,n.hp+1.2*dt*n.sc);
 const dx=P.x-n.x,dy=P.y-n.y,d=Math.hypot(dx,dy);if(d>900){n.x=P.x-Math.cos(P.a)*60;n.y=P.y-Math.sin(P.a)*60;if(solid(n.x,n.y)){n.x=P.x;n.y=P.y}return}
 let tg=null,td=pr?300:170;npcs.forEach(q=>{if(q.al||q.held||q.hp<=0)return;if(Math.hypot(q.x-P.x,q.y-P.y)>420)return;const ok=pr?(q.r<=n.r*(n.life!=null?3.2:1.6)||q.ch):(q.k=='p'&&q.ch);const e=Math.hypot(q.x-n.x,q.y-n.y);if(ok&&e<td){tg=q;td=e}});
-let a=n.a,v=0;if(tg){a=Math.atan2(tg.y-n.y,tg.x-n.x);v=125-n.r;if(td<n.r+tg.r+8&&n.cd<=0){n.cd=1.1;n.ea=.25;tg.hp-=n.r*(pr?1.5:.9)*pw;tg.fl=.12;if(tg.k=='h')tg.fear=3;else tg.ch=1;if(tg.hp<=0)killN(tg)}}
+let a=n.a,v=0;if(tg){a=Math.atan2(tg.y-n.y,tg.x-n.x);v=125-n.r;if(td<n.r+tg.r+8&&n.cd<=0){n.cd=1.1;n.ea=.25;tg.hp-=(tg.sc||1)*n.r*(pr?1.5:.9)*pw;tg.fl=.12;if(tg.k=='h')tg.fear=3;else tg.ch=1;if(tg.hp<=0)killN(tg)}}
 else if(d>150){a=Math.atan2(dy,dx);v=d>350?150:95}else{if(n.tk<=0){n.tk=2+R()*3;n.wa=R()*TAU;n.wv=R()<.4?0:1}a=n.wa||0;v=(n.wv||0)*30}
 if(v>0)steer(n,a,v,dt)}
 // ---------- Дейноних: цепляние ----------
-function latchOn(q,bd){P.lt=q;P.lb=7;P.ltt=0;P.la=Math.atan2(q.y-P.y,q.x-P.x);q.hp-=bd*.5;q.fl=.12;if(q.k=='h'){q.fear=3;q.pv=6}else q.ch=1;if(q.hp<=0)pkill(q)}
-function latchBite(){const c=P.lt;P.lb--;P.cd=.4;P.bt=.15;c.hp-=(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*1.2*bonus(c);c.fl=.12;if(c.k=='h'){c.fear=3;c.pv=6}else c.ch=1;if(c.hp<=0)pkill(c);if(P.lb<=0)P.lt=null}
+function latchOn(q,bd){P.lt=q;P.lb=7;P.ltt=0;P.la=Math.atan2(q.y-P.y,q.x-P.x);q.hp-=(q.sc||1)*bd*.5;q.fl=.12;if(q.k=='h'){q.fear=3;q.pv=6}else q.ch=1;if(q.hp<=0)pkill(q)}
+function latchBite(){const c=P.lt;P.lb--;P.cd=.4;P.bt=.15;c.hp-=(c.sc||1)*rf(c)*(P.k?11:18)*S[P.s].dmg*(.5+P.gr/100)*m('dmg')*1.2*bonus(c);c.fl=.12;if(c.k=='h'){c.fear=3;c.pv=6}else c.ch=1;if(c.hp<=0)pkill(c);if(P.lb<=0)P.lt=null}
 function latchUpd(dt){const p=P,q=p.lt;if(!q)return;if(q.hp<=0||npcs.indexOf(q)<0||p.lb<=0||(p.ltt+=dt)>12){p.lt=null;return}const ox=p.x,oy=p.y;p.a=p.la;p.x=q.x-Math.cos(p.a)*(p.r+q.r*.5);p.y=q.y-Math.sin(p.a)*(p.r+q.r*.5);if(solid(p.x,p.y)){p.x=ox;p.y=oy;p.lt=null}}
 // ---------- покадровое обновление ----------
-function upX(dt){const p=P;latchUpd(dt);p.asv=(p.asv||0)-dt;if(SLOT&&p.asv<=0&&!p.dead){p.asv=30;saveCore()}if(p.t.th>0){p.thc=(p.thc||0)-dt;if(p.thc<=0){p.thc=.6;near(p.r*3+90,n=>{n.stun=Math.max(n.stun||0,.9);if(n.k=='h')n.fear=Math.max(n.fear||0,3);else n.hp-=dmgB()*.25})}}p.xcd[0]-=dt;p.xcd[1]-=dt;p.lay-=dt;
+function upX(dt){const p=P;latchUpd(dt);p.asv=(p.asv||0)-dt;if(p.t.th>0){p.thc=(p.thc||0)-dt;if(p.thc<=0){p.thc=.6;near(p.r*3+90,n=>{n.stun=Math.max(n.stun||0,.9);if(n.k=='h')n.fear=Math.max(n.fear||0,3);else n.hp-=(n.sc||1)*dmgB()*.25})}}p.xcd[0]-=dt;p.xcd[1]-=dt;p.lay-=dt;
 while(p.gs<PSL.length&&p.gr>=PSL[p.gs]){p.gs++;p.sp++;msg('✨ Новое очко навыков (Tab → Навыки)')}
 if(p.gr>=ASL[0]&&!p.u0){p.u0=1;msg('✨ Открыт слот способности Z')}if(p.gr>=ASL[1]&&!p.u1){p.u1=1;msg('✨ Открыт слот способности X')}
 VF=DIF().vis*(1-.35*night())*(1-.4*wx.fog)*(p.t.hd>0?.15:1);
@@ -529,17 +544,17 @@ if(oy==14)L(r*.95,()=>{F(1.5);el(r*1.95,0,r*.3,r*.3)});
 if(oy==15){for(let i=0;i<6;i++)L(r*(.8+.25*i),()=>{F(.75+i*.06);el(r*(1.5+.12*i),0,r*.35,r*.3)});L(r*2.4,()=>{F(1.1);el(r*2.3,0,r*.45,r*.3)})}
 if(oy==16)L(r*.85,()=>{g.strokeStyle='#efe6cf';g.lineWidth=r*.1;g.lineCap='round';[-1,1].forEach(s=>{g.beginPath();g.moveTo(r*1.2,s*r*.7);g.lineTo(r*2.3,s*r*.95);g.stroke()})})}
 const arcN=(rg,half,f)=>npcs.filter(n=>{if(n.al)return false;const dx=n.x-P.x,dy=n.y-P.y;return Math.hypot(dx,dy)<rg+n.r&&Math.abs(((Math.atan2(dy,dx)-P.a+9.4248)%6.2832)-3.1416)<half}).forEach(f);
-function dashX(q,bd){if(P.s!=14||P.carry)return false;q.hp-=bd*3;q.stun=2.5;q.fl=.12;mv(q,Math.cos(P.a)*90,Math.sin(P.a)*90);if(q.k=='h'){q.fear=3;q.pv=6}else q.ch=1;if(q.hp<=0)pkill(q);return true}
+function dashX(q,bd){if(P.s!=14||P.carry)return false;q.hp-=(q.sc||1)*bd*3;q.stun=2.5;q.fl=.12;mv(q,Math.cos(P.a)*90,Math.sin(P.a)*90);if(q.k=='h'){q.fear=3;q.pv=6}else q.ch=1;if(q.hp<=0)pkill(q);return true}
 AB[9]=['Плевок ядом',14,()=>{let b=null,bd=340;npcs.forEach(n=>{if(n.al)return;const dx=n.x-P.x,dy=n.y-P.y,d=Math.hypot(dx,dy);if(d<bd&&Math.abs(((Math.atan2(dy,dx)-P.a+9.4248)%6.2832)-3.1416)<.7){b=n;bd=d}});if(!b){msg('Цель должна быть впереди');return false}b.bl=9;b.stun=1;b.fl=.12;if(b.k=='h'){b.fear=4;b.pv=6}else b.ch=1;P.bt=.3},'плевок в цель впереди: яд на 9 с и оглушение'];
 AB[10]=['Бешеная серия',22,()=>{P.t.fr=3.5},'3.5 с: укусы втрое чаще и сильнее на 15%'];
-AB[11]=['Рыбалка',24,()=>{const a=P.a,w=tile(P.x,P.y)<2||tile(P.x+Math.cos(a)*(P.r+18),P.y+Math.sin(a)*(P.r+18))<2;if(!w){msg('Для рыбалки нужна вода рядом');return false}P.fd=Math.min(100,P.fd+35);P.wt=100;P.n[0]=Math.min(100,P.n[0]+30);P.n[1]=Math.min(100,P.n[1]+25);P.hp=Math.min(maxhp(),P.hp+25);msg('🐟 Пойман улов!')},'ловит рыбу у воды: еда, питьё и лечение. Не тонет, в воде быстр'];
-AB[12]=['Стая',40,()=>{for(let i=0;i<3;i++){const a=mkAlly(12,P.x+Math.cos(i*2.1)*30,P.y+Math.sin(i*2.1)*30);a.age=999;a.r=a.r0;a.mh=a.hp=a.r0*9;a.life=25;a.nc=1;npcs.push(a)}},'зовёт на 25 с трёх компсогнатов-союзников'];
-AB[13]=['Шипохвост',12,()=>{P.bt=.25;near(P.r*3.6+36,n=>{n.hp-=dmgB()*2.2;n.stun=1.5;n.fl=.12;const a=Math.atan2(n.y-P.y,n.x-P.x);mv(n,Math.cos(a)*50,Math.sin(a)*50);if(n.k=='h'){n.fear=3;n.pv=6}else n.ch=1;if(n.hp<=0)pkill(n)})},'удар хвостом по кругу: урон ×2.2, оглушение и отбрасывание'];
+AB[11]=['Рыбалка',24,()=>{const a=P.a,w=tile(P.x,P.y)<2||tile(P.x+Math.cos(a)*(P.r+18),P.y+Math.sin(a)*(P.r+18))<2;if(!w){msg('Для рыбалки нужна вода рядом');return false}P.fd=Math.min(100,P.fd+35);P.wt=100;P.n[0]=Math.min(100,P.n[0]+30);P.n[1]=Math.min(100,P.n[1]+25);P.hp=Math.min(maxhp(),P.hp+25*PSC());msg('🐟 Пойман улов!')},'ловит рыбу у воды: еда, питьё и лечение. Не тонет, в воде быстр'];
+AB[12]=['Стая',40,()=>{for(let i=0;i<3;i++){const a=mkAlly(12,P.x+Math.cos(i*2.1)*30,P.y+Math.sin(i*2.1)*30);a.age=999;a.r=a.r0;a.mh=a.hp=MASS[12];a.sc=a.mh/(a.r0*9);a.life=25;a.nc=1;npcs.push(a)}},'зовёт на 25 с трёх компсогнатов-союзников'];
+AB[13]=['Шипохвост',12,()=>{P.bt=.25;near(P.r*3.6+36,n=>{n.hp-=(n.sc||1)*dmgB()*2.2;n.stun=1.5;n.fl=.12;const a=Math.atan2(n.y-P.y,n.x-P.x);mv(n,Math.cos(a)*50,Math.sin(a)*50);if(n.k=='h'){n.fear=3;n.pv=6}else n.ch=1;if(n.hp<=0)pkill(n)})},'удар хвостом по кругу: урон ×2.2, оглушение и отбрасывание'];
 AB[14]=['Лобовой удар',13,()=>{P.dh=.35},'таран головой: урон ×3, оглушение 2.5 с и отбрасывание'];
 AB[15]=['Громовой шаг',26,()=>{P.t.th=5},'5 с: каждый шаг оглушает и пугает всех вокруг'];
-AB[16]=['Размах когтей',11,()=>{P.bt=.25;arcN(P.r*3.2+40,1.1,n=>{n.hp-=dmgB()*2;n.bl=6;n.fl=.12;if(n.k=='h'){n.fear=3;n.pv=6}else n.ch=1;if(n.hp<=0)pkill(n)})},'полукруг когтями: урон ×2 и кровотечение'];
+AB[16]=['Размах когтей',11,()=>{P.bt=.25;arcN(P.r*3.2+40,1.1,n=>{n.hp-=(n.sc||1)*dmgB()*2;n.bl=6;n.fl=.12;if(n.k=='h'){n.fear=3;n.pv=6}else n.ch=1;if(n.hp<=0)pkill(n)})},'полукруг когтями: урон ×2 и кровотечение'];
 // ====================== СПИСОК ИЗМЕНЕНИЙ ======================
-const CL=[['1.7','Баланс',['Дейнозух ослаблен: меньше здоровья и урона, медленнее в воде','Все растут медленнее: чем крупнее вид и чем он взрослее, тем дольше растёт']],['1.6','Территории хищников, меню и река',['Хищники защищают территорию: встречаясь, кружат, кусают друг друга, слабый или меньший убегает','Кнопки управления (укус, способность и др.) скрыты в главном меню','Динозавры в реке плавно поворачиваются и не крутятся вместе с течением']],['1.5','Аккаунт Google и дизайн как в Evrima',['Вход через Google: мультиплеер работает через аккаунт, а сохранённые динозавры, рекорды, управление, ник, цвет и сложность хранятся в облаке аккаунта','Оформление в стиле The Isle: Evrima: тёмные панели, строгий шрифт, тонкие полосы, новые цвета интерфейса','Из выбора динозавра убраны «Сложность» и «Мои динозавры» (они остались в главном меню)']],
+const CL=[['1.8','Вес вместо здоровья, аккаунт Google, чище меню',['Здоровье равно весу тела в кг: у каждого вида научная масса взрослой особи (Тираннозавр ~8400 кг, Компсогнат ~3 кг), в росте масса увеличивается как куб длины','Мутации и навыки на здоровье меняют массу тела; чем крупнее зверь, тем сильнее кусает','HUD в стиле Evrima: тонкие сегментированные полосы, веса в кг','Убраны выбор сложности (игра идёт в одном режиме) и «Мои динозавры»','Вход через Google обязателен для мультиплеера; рекорды, ник, управление и цвет хранятся в облаке аккаунта']],['1.7','Баланс',['Дейнозух ослаблен: меньше здоровья и урона, медленнее в воде','Все растут медленнее: чем крупнее вид и чем он взрослее, тем дольше растёт']],['1.6','Территории хищников, меню и река',['Хищники защищают территорию: встречаясь, кружат, кусают друг друга, слабый или меньший убегает','Кнопки управления (укус, способность и др.) скрыты в главном меню','Динозавры в реке плавно поворачиваются и не крутятся вместе с течением']],['1.5','Аккаунт Google и дизайн как в Evrima',['Вход через Google: мультиплеер работает через аккаунт, а сохранённые динозавры, рекорды, управление, ник, цвет и сложность хранятся в облаке аккаунта','Оформление в стиле The Isle: Evrima: тёмные панели, строгий шрифт, тонкие полосы, новые цвета интерфейса','Из выбора динозавра убраны «Сложность» и «Мои динозавры» (они остались в главном меню)']],
 ['1.5','Новые модели, трупы и драка в меню',[
 'Новые модели всех динозавров и дейнозуха: зубы, глаза с бровями, когти, оперение у рапторов, рисунок на шкуре, дыхание и покачивание при ходьбе',
 'Диплодок исправлен: длинная шея вытянута вперёд и плавно покачивается, хвост-плеть, массивные ноги',
@@ -574,27 +589,10 @@ const CL=[['1.7','Баланс',['Дейнозух ослаблен: меньш�
 const VER=CL[0][0];
 function clog(){ov.className='mn';ov.innerHTML='<div class="det" style="width:100%;overflow:auto;max-height:100%"><h2>Список изменений</h2><p class="tg">Текущая версия: '+VER+'</p>'+CL.map((v,i)=>'<h2 style="margin-top:16px;font-size:17px">Версия '+v[0]+' — '+v[1]+(i?'':' <span class="tg">(новая)</span>')+'</h2><ul style="margin:6px 0 0;padding-left:20px;font-size:14px;line-height:1.5">'+v[2].map(t=>'<li style="margin-bottom:5px">'+t+'</li>').join('')+'</ul>').join('')+'<button class="bk" style="margin-top:14px" onclick="menu()">Назад</button></div>'}
 
-// ====================== СОХРАНЕНИЕ ДИНО ======================
-const SK='isle2d_dinos_v1';let SLOT=null,SVM='';
-function readSaves(){try{const a=JSON.parse(localStorage.getItem(SK)||'[]');return Array.isArray(a)?a.filter(d=>d&&S[d.s]):[]}catch(e){return[]}}
-function writeSaves(a){try{localStorage.setItem(SK,JSON.stringify(a));return true}catch(e){return false}}
-function saveCore(){if(!P||P.dead)return 0;const a=readSaves(),p=P,d={id:SLOT||Date.now().toString(36),t:Date.now(),s:p.s,gr:p.gr,age:p.age,mu:p.mu.slice(),sl:p.sl.map(v=>v==null?null:v),ps:p.ps.slice(),xs:p.xs.slice(),sp:p.sp,pts:p.pts,got:p.got,gs:p.gs,cnb:p.cnb||0,hp:p.hp,fd:p.fd,wt:p.wt,n:p.n.slice(),x:Math.round(p.x),y:Math.round(p.y)},i=a.findIndex(x=>x.id==d.id);
-if(i>=0)a[i]=d;else{if(a.length>=8)return -1;a.push(d)}if(!writeSaves(a))return -2;SLOT=d.id;return 1}
-function saveDino(){const r=saveCore();SVM=r==1?'✔ Сохранено: '+S[P.s].n+' · '+Math.round(P.gr)+'%':r==-1?'Нет места: максимум 8 сохранений. Удали старое в меню «Мои динозавры».':'Не удалось сохранить: хранилище браузера недоступно';tabUi()}
-function loadDino(id){const d=readSaves().find(x=>x.id==id);if(!d)return;start(d.s);const p=P,nm=v=>Math.max(0,Math.min(100,+v||0));
-p.gr=nm(d.gr);p.age=+d.age||0;p.mu=(d.mu||[]).filter(i=>M[i]);p.sl=(d.sl||[]).map(v=>v!=null&&M[v]?v:null);p.ps=(d.ps||[]).filter(id=>PSX[id]);p.xs=(d.xs||[null,null]).map(id=>AXD[id]?id:null);
-p.sp=+d.sp||0;p.pts=+d.pts||0;p.got=Math.min(4,+d.got||0);p.gs=Math.min(PSL.length,+d.gs||0);p.cnb=+d.cnb||0;p.fd=nm(d.fd);p.wt=nm(d.wt);p.n=[0,1,2].map(i=>nm((d.n||[])[i]));p.u0=p.gr>=ASL[0]?1:0;p.u1=p.gr>=ASL[1]?1:0;
-p.hp=Math.max(1,Math.min(maxhp(),+d.hp||1));if([2,3,5].indexOf(tile(d.x,d.y))>=0){p.x=d.x;p.y=d.y}SLOT=d.id;msg('💾 Загружен: '+S[d.s].n+' · '+Math.round(p.gr)+'%')}
-function delDino(id){writeSaves(readSaves().filter(x=>x.id!=id));saves()}
-function saves(){const a=readSaves().sort((x,y)=>y.t-x.t);ov.className='mn';ov.innerHTML='<div class="det" style="width:100%;overflow:auto;max-height:100%"><h2>Мои динозавры</h2>'+(a.length?a.map(d=>'<div class="dt"><h4>'+S[d.s].n+' · '+Math.round(d.gr)+'%</h4><div class="kv"><span>Мутаций / навыков</span><b>'+(d.mu||[]).length+' / '+(d.ps||[]).length+'</b></div><div class="kv"><span>Возраст в игре</span><b>'+Math.floor((d.age||0)/60)+' мин</b></div><div class="kv"><span>Сохранён</span><b>'+new Date(d.t).toLocaleString('ru')+'</b></div><button onclick="loadDino(\''+d.id+'\')">Загрузить</button><button style="background:#6a2a24;color:#fff" onclick="delDino(\''+d.id+'\')">Удалить</button></div>').join(''):'<p>Пока нет сохранённых динозавров. Играй и нажми «Сохранить дино» во вкладке «Персонаж» (Tab / ☰).</p>')+'<button class="bk" style="margin-top:12px" onclick="NET?pickSp():menu()">Назад</button></div>'}
 
 // ====================== 1.4: СЛОЖНОСТЬ, ЗАСАДЫ ДЕЙНОЗУХОВ, ЦЕЛИ И СОБЫТИЯ ======================
-const DFS=[
-{n:'Малёк',d:'Для знакомства с островом. Хищников меньше, они слабее и хуже видят. Дейнозухи всплывают часто и не бьют из засады.',dmgIn:.6,vis:.75,hun:.75,thi:.75,grow:1.3,pr:.6,crocs:7,surf:16,amb:0,evt:.6,sc:.5,pack:0},
-{n:'Охотник',d:'Обычная игра. Дейнозухи показываются раз в полминуты, из засады бьют заметно сильнее.',dmgIn:1,vis:1,hun:1,thi:1,grow:1,pr:1,crocs:12,surf:35,amb:.4,evt:1,sc:1,pack:0},
-{n:'Альфа',d:'Хищники злее и зорче, еда и вода кончаются быстрее, растёшь медленнее. Дейнозухов много, они редко всплывают. Иногда по твоему следу идёт стая.',dmgIn:1.4,vis:1.2,hun:1.2,thi:1.25,grow:.9,pr:1.3,crocs:18,surf:60,amb:.7,evt:1.4,sc:1.6,pack:1},
-{n:'Апокалипсис',d:'Остров хочет тебя убить. Двойной урон, хищники чуют издалека, голод и жажда душат, дейнозухи почти не всплывают, стаи приходят часто.',dmgIn:1.9,vis:1.4,hun:1.45,thi:1.5,grow:.8,pr:1.7,crocs:26,surf:100,amb:1,evt:2,sc:2.5,pack:2}];
-let DL=1;try{const v=+localStorage.getItem('isle2d_dif');if(v>=0&&v<DFS.length)DL=v}catch(e){}
+const DFS=[{n:'Остров',d:'Обычная игра. Дейнозухи показываются раз в полминуты, из засады бьют заметно сильнее.',dmgIn:1,vis:1,hun:1,thi:1,grow:1,pr:1,crocs:12,surf:35,amb:.4,evt:1,sc:1,pack:0}];
+const DL=0;
 const DIF=()=>DFS[DL];
 let EV={t:70,dry:0,ban:null,ks:0,kc:0,qs:0,qd:0,q:null,qt:0,lf:80,lw:75};
 function dfm(k){return k=='hdec'?DIF().hun:k=='tdec'?DIF().thi*(EV.dry>0?1.8:1):1}
@@ -602,8 +600,6 @@ const bestK=i=>'isle2d_best_'+i,getBest=i=>{try{return+localStorage.getItem(best
 const score=()=>P?Math.round(EV.ks+EV.qs+P.age*DIF().sc*.4+P.gr*4*DIF().sc):0;
 
 // --- сложность: меню ---
-function difMenu(b){ov.className='mn';ov.innerHTML='<div class="det" style="width:100%;overflow:auto;max-height:100%"><h2>Сложность</h2><p>Действует на новую игру: хищники, дейнозухи, голод, жажда, рост и события. Очки умножаются на коэффициент уровня.</p>'+DFS.map((d,i)=>'<button class="o" style="'+(i==DL?'border-color:var(--ac)':'')+'" onclick="setDif('+i+','+b+')">'+(i==DL?'✔ ':'')+d.n+' · очки ×'+d.sc+(getBest(i)?' · рекорд '+getBest(i):'')+'<small>'+d.d+'</small></button>').join('')+'<button class="bk" style="margin-top:12px" onclick="'+(b?'pickSp()':'menu()')+'">Назад</button></div>'}
-function setDif(i,b){DL=i;try{localStorage.setItem('isle2d_dif',i)}catch(e){}difMenu(b)}
 
 // --- урон по игроку зависит от сложности (в мультиплеере — без изменений) ---
 const _hurt=hurt;hurt=function(d){_hurt(NET?d:d*DIF().dmgIn)};
@@ -678,7 +674,7 @@ const _upX=upX;upX=function(dt){_upX(dt);extUpd(dt)};
 const _start=start;start=function(si){_start(si);EV={t:50+R()*30,dry:0,ban:null,ks:0,kc:0,qs:0,qd:0,q:null,qt:25,lf:P.fd,lw:P.wt};
  msg('Сложность: '+DIF().n+(si!=8?' · дейнозухи прячутся под водой':''))};
 const _die=die;die=function(){const sc=score(),dl=DL;_die();const old=getBest(dl),nw=sc>old;if(nw)setBest(dl,sc);
- const p=document.querySelector('#ov .box p');if(p)p.innerHTML+=' Очки: <b>'+sc+'</b> · '+DFS[dl].n+' · цели: '+EV.qd+(nw?' · 🏆 новый рекорд!':old?' · рекорд: '+old:'')};
+ const p=document.querySelector('#ov .box p');if(p)p.innerHTML+=' Очки: <b>'+sc+'</b> · цели: '+EV.qd+(nw?' · 🏆 новый рекорд!':old?' · рекорд: '+old:'')};
 
 // --- HUD: очки, цель, баннер события ---
 const _hudX=hudX;
@@ -697,7 +693,7 @@ S[8].d+=' Обожает стегозавров, паразауролофов и
 function carHint(tg){const q=tg.q,i=q.indexOf(Math.max(...q));return'труп: '+(S[tg.ty]?S[tg.ty].n:'динозавр')+' ('+['белки','жиры','углеводы'][i]+')'+(P.s==8&&FAV[tg.ty]?' ❤':'')}
 const _eatT=eatT;
 eatT=function(tg,dt){const p=P,f0=p.fd,n0=p.n.slice();_eatT(tg,dt);
- if(p.s==8&&FAV[tg.ty]){const k=.5;p.fd=Math.min(100,p.fd+(p.fd-f0)*k);for(let i=0;i<3;i++)p.n[i]=Math.min(100,p.n[i]+(p.n[i]-n0[i])*k);p.hp=Math.min(maxhp(),p.hp+30*dt);
+ if(p.s==8&&FAV[tg.ty]){const k=.5;p.fd=Math.min(100,p.fd+(p.fd-f0)*k);for(let i=0;i<3;i++)p.n[i]=Math.min(100,p.n[i]+(p.n[i]-n0[i])*k);p.hp=Math.min(maxhp(),p.hp+30*dt*PSC());
   if(!tg.fm){tg.fm=1;msg('🐊 Любимая добыча: '+S[tg.ty].n+'! Питательность выше')}}};
 
 // --- общие хелперы моделей ---
@@ -918,14 +914,20 @@ if(n.fl2>0&&n.rv){steer(n,Math.atan2(n.y-n.rv.y,n.x-n.rv.x),125,dt);return true}
 if(!rv)return false;
 if(n.hp<n.mh*.35||rv.r>n.r*1.6){n.fl2=rv.r>n.r*1.6?6:10;n.rv=rv;return false}
 const ang=Math.atan2(rv.y-n.y,rv.x-n.x),reach=n.r+rv.r+8;n.a=ang;
-if(rd<=reach){if(n.cd<=0){n.cd=1.1;rv.hp=Math.max(rv.mh*.2,rv.hp-n.r*.8);rv.fl=.12;mv(rv,Math.cos(ang)*6,Math.sin(ang)*6);if(rv.hp<rv.mh*.35){rv.fl2=10;rv.rv=n}}n.ea=.25;return true}
+if(rd<=reach){if(n.cd<=0){n.cd=1.1;rv.hp=Math.max(rv.mh*.2,rv.hp-n.r*.8*(rv.sc||1));rv.fl=.12;mv(rv,Math.cos(ang)*6,Math.sin(ang)*6);if(rv.hp<rv.mh*.35){rv.fl2=10;rv.rv=n}}n.ea=.25;return true}
 if(rd<reach+70){if((n.cst=(n.cst||0)-dt)<=0){n.cst=1.5+R();n.cs=-n.cs||1}
 steer(n,ang+n.cs*1.1,55,dt);if(n.cd<=0&&rd<reach+35)steer(n,ang,150,dt);return true}
 steer(n,ang,72,dt);return true}
 const _aiT=ai;ai=function(n,dt){if(!n.al&&n.k=='p'&&n.ty!=8&&!n.kin&&n.life==null&&!n.held&&terr(n,dt))return;_aiT(n,dt)};
 // ====== Google-аккаунт: вход, облако, мультиплеер (Firebase) ======
-// Вставь данные своего проекта Firebase (Project settings → Your apps → Web app):
-const FIREBASE_CONFIG={apiKey:'',authDomain:'',databaseURL:'',projectId:'',appId:''};
+// КАК ПОДКЛЮЧИТЬ (один раз, бесплатно):
+// 1) console.firebase.google.com → Add project.
+// 2) Authentication → Sign-in method → включить Google. Settings → Authorized domains → добавить адрес сайта, где лежит игра.
+// 3) Realtime Database → Create database. Вкладка Rules → вставить:
+//    {"rules":{"users":{"$uid":{".read":"auth.uid===$uid",".write":"auth.uid===$uid"}},"rooms":{"$r":{".read":"auth!=null",".write":"auth!=null"}}}}
+// 4) Project settings → Your apps → Web app (</>) → скопировать firebaseConfig сюда (databaseURL берётся из Realtime Database).
+// 5) Выложить файл на хостинг (GitHub Pages / Firebase Hosting). Внутри чата и из file:// вход Google не работает.
+const FIREBASE_CONFIG={apiKey:'AIzaSyBs2U5OUgUi_6Y7mDYukzt-c3ia0ehtgS4',authDomain:'evraima-4d105.firebaseapp.com',databaseURL:'https://evraima-4d105-default-rtdb.firebaseio.com',projectId:'evraima-4d105',appId:'1:545029204571:web:c1867325bb982cb8d1ad7e'};
 const ACC={user:null,st:'init',msg:'',sync:'',ready:false,scr:0};let _cp=0;
 const _si=Storage.prototype.setItem,_ri=Storage.prototype.removeItem;
 Storage.prototype.setItem=function(k,v){_si.call(this,k,v);if(this===localStorage&&String(k).indexOf('isle2d_')==0)cloudPush()};
@@ -935,7 +937,6 @@ const cloudRef=()=>firebase.database().ref('users/'+ACC.user.uid+'/save');
 function cloudPush(){if(!ACC.user||!ACC.ready)return;clearTimeout(_cp);_cp=setTimeout(()=>{_cp=0;cloudRef().set(JSON.stringify(cloudBlob())).then(()=>{ACC.sync='☁ Сохранено '+new Date().toLocaleTimeString('ru')},()=>{ACC.sync='Не удалось сохранить в облако'})},1500)}
 async function cloudPull(){const u=ACC.user;ACC.ready=false;try{const sn=await cloudRef().once('value');let c=null;try{c=JSON.parse(sn.val()||'null')}catch(e){}
 if(c&&typeof c=='object'){localKeys().forEach(k=>_ri.call(localStorage,k));for(const k in c)if(k.indexOf('isle2d_')==0)_si.call(localStorage,k,String(c[k]))}
-try{const v=+localStorage.getItem('isle2d_dif');if(v>=0&&v<DFS.length)DL=v}catch(e){}
 bLoad();const t=+localStorage.getItem('isle2d_theme');if(TH[t])applyTheme(t);
 NICK=localStorage.getItem('isle2d_nick')||String(u.displayName||NICK).split(' ')[0].slice(0,14)||NICK;
 ACC.ready=true;ACC.sync='☁ Подключено';if(!c)cloudPush()}catch(e){ACC.sync='Облако недоступно: '+(e.code||e.message)}}
@@ -946,13 +947,13 @@ try{firebase.initializeApp(c);ACC.st='out';firebase.auth().getRedirectResult().c
 firebase.auth().onAuthStateChanged(async u=>{ACC.user=u||null;ACC.st=u?'in':'out';if(u)await cloudPull();else ACC.ready=false;accRefresh()})}catch(e){ACC.st='nosdk';ACC.msg=String(e.message||e)}}
 async function accLogin(){const a=firebase.auth(),p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});ACC.msg='';
 try{await a.signInWithPopup(p)}catch(e){if(e.code=='auth/popup-blocked'||e.code=='auth/operation-not-supported-in-this-environment'){a.signInWithRedirect(p);return}ACC.msg=errTxt(e);accRefresh()}}
-async function accLogout(){leaveNet();try{if(ACC.ready)await cloudRef().set(JSON.stringify(cloudBlob()))}catch(e){}ACC.ready=false;localKeys().forEach(k=>_ri.call(localStorage,k));DL=1;bLoad();await firebase.auth().signOut()}
+async function accLogout(){leaveNet();try{if(ACC.ready)await cloudRef().set(JSON.stringify(cloudBlob()))}catch(e){}ACC.ready=false;localKeys().forEach(k=>_ri.call(localStorage,k));bLoad();await firebase.auth().signOut()}
 function accChip(){const u=ACC.user;return u?(u.photoURL?'<img src="'+esc(u.photoURL)+'" referrerpolicy="no-referrer">':'')+'<span>'+esc(String(u.displayName||u.email||'Игрок').slice(0,18))+'</span>':'<span>Войти через Google</span>'}
 function accMenu(){ACC.scr=1;ov.className='mn';const u=ACC.user;let b;
-if(ACC.st=='nocfg')b='<p>Аккаунт Google ещё не подключён: в скрипте, в блоке FIREBASE_CONFIG, нужно указать данные проекта Firebase.</p>';
+if(ACC.st=='nocfg')b='<p>Аккаунт Google ещё не подключён. Нужно один раз создать бесплатный проект Firebase и вставить его данные в FIREBASE_CONFIG в конце файла (инструкция там же, в комментарии). После этого вход, облачные сохранения и мультиплеер заработают.</p>';
 else if(ACC.st=='nosdk')b='<p>Firebase не загрузился. Проверь интернет и открой игру с сайта (например, GitHub Pages), а не внутри чата.</p>';
-else if(u)b='<div class="dt"><h4>'+esc(u.displayName||'')+'</h4><div class="kv"><span>Почта</span><b>'+esc(u.email||'')+'</b></div><div class="kv"><span>Облако</span><b>'+(ACC.ready?esc(ACC.sync||'☁ Подключено'):'Загрузка…')+'</b></div></div><p>В аккаунте хранятся сохранённые динозавры, рекорды, управление, ник, цвет интерфейса и сложность. Мультиплеер работает через этот же аккаунт.</p><button class="go" onclick="accLogout()">Выйти</button>';
-else b='<p>Войди через Google: сохранения и мультиплеер привяжутся к аккаунту и будут доступны на любом устройстве.</p><button class="go" onclick="accLogin()">Войти через Google</button>';
+else if(u)b='<div class="dt"><h4>'+esc(u.displayName||'')+'</h4><div class="kv"><span>Почта</span><b>'+esc(u.email||'')+'</b></div><div class="kv"><span>Облако</span><b>'+(ACC.ready?esc(ACC.sync||'☁ Подключено'):'Загрузка…')+'</b></div></div><p>В аккаунте хранятся рекорды, управление, ник и цвет интерфейса — всё синхронизируется между устройствами. Мультиплеер работает только через этот аккаунт.</p><button class="go" onclick="accLogout()">Выйти</button>';
+else b='<p>Войди через Google: рекорды и настройки сохранятся в аккаунте, а мультиплеер станет доступен.</p><button class="go" onclick="accLogin()">Войти через Google</button>';
 ov.innerHTML='<div class="det" style="width:100%"><h2>Аккаунт</h2>'+b+(ACC.msg?'<p class="r">'+esc(ACC.msg)+'</p>':'')+'<button class="bk" onclick="ACC.scr=0;menu()">Назад</button></div>'}
 async function mkRoom(code){const db=firebase.database(),uid=ACC.user.uid,base=db.ref('rooms/'+code),pl=base.child('players'),mine=pl.child(uid),ev=base.child('ev'),peers=new Map(),hs={},clean=o=>JSON.parse(JSON.stringify(o));let live=1;const last={n:NICK,al:0};
 await mine.set(clean(last));mine.onDisconnect().remove();
