@@ -1026,12 +1026,14 @@ async function mkRoom(code){const db=firebase.database(),uid=ACC.user.uid,base=d
 await mine.set(clean(last));mine.onDisconnect().remove();
 const up=s=>{if(live&&s.key!=uid)peers.set(s.key,s.val())};pl.on('child_added',up);pl.on('child_changed',up);pl.on('child_removed',s=>peers.delete(s.key));
 const evq=ev.orderByKey().startAt(ev.push().key);
-evq.on('child_added',s=>{const v=s.val();if(!v||!live)return;(hs[v.k]||[]).forEach(f=>{try{f({data:v.d,isMe:v.u==uid,peer:v.u})}catch(e){}})});
+evq.on('child_added',s=>{const v=s.val();if(!v||!live||v.k=='adm')return;(hs[v.k]||[]).forEach(f=>{try{f({data:v.d,isMe:v.u==uid,peer:v.u})}catch(e){}})});
+const adr=base.child('adm'),adq=adr.orderByKey().startAt(adr.push().key);
+adq.on('child_added',s=>{const v=s.val();if(!v||!live||v.k!='adm')return;(hs.adm||[]).forEach(f=>{try{f({data:v.d,isMe:v.u==uid,peer:v.u})}catch(e){}})});
 return{connected(){return online},peers(){const a=[{peer:uid,isMe:true,sameTab:true,kind:'viewer',presence:last}];peers.forEach((v,k)=>a.push({peer:k,isMe:false,sameTab:false,kind:'viewer',presence:v}));return a},
 on(n,f){(hs[n]=hs[n]||[]).push(f)},
-emit(n,d){try{const r=ev.push();setTimeout(()=>r.remove().catch(()=>{}),12000);return r.set(clean({k:n,u:uid,d:d}))}catch(e){return Promise.resolve()}},
+emit(n,d){try{const r=(n=='adm'?adr:ev).push();setTimeout(()=>r.remove().catch(()=>{}),12000);return r.set(clean({k:n,u:uid,d:d}))}catch(e){return Promise.resolve()}},
 presence(o){try{Object.assign(last,o);return mine.update(clean(o))}catch(e){return Promise.resolve()}},
-async leave(){live=0;pl.off();evq.off();ci.off();peers.clear();try{await mine.remove();await mine.onDisconnect().cancel()}catch(e){}}}}
+async leave(){live=0;pl.off();evq.off();adq.off();ci.off();peers.clear();try{await mine.remove();await mine.onDisconnect().cancel()}catch(e){}}}}
 const _at=applyTheme;applyTheme=function(i){_at(i);try{localStorage.setItem('isle2d_theme',i)}catch(e){}};
 
 // ====================== ОТРЫВАНИЕ КУСКОВ МЯСА ======================
@@ -1058,7 +1060,7 @@ carHint=function(tg){if(tg.ch)return'кусок мяса: '+(S[tg.ty]?S[tg.ty].n
  return _carHintX(tg)+(P.cc||P.k?'':' · удерживая '+EK()+', нажми '+(coarse()?'НЕСТИ':'V')+' — оторвать кусок')};
 
 // ====================== СЕРВЕРЫ, НАСТРОЙКИ, АДМИН-ПАНЕЛЬ ======================
-const SRV_PW='1183',SIZES=[['Малая',500],['Средняя',885],['Большая',1200]],SRVP='rooms/_srv';
+const SIZES=[['Малая',500],['Средняя',885],['Большая',1200]],SRVP='servers';
 function SRV_DEF(){return{code:'',name:'',size:885,ai:1,adm:0,owner:''}}
 var SRV=SRV_DEF();function SC(){return Math.pow(N/885,2)}
 const sizeName=n=>(SIZES.find(x=>x[1]==n)||['Своя'])[0]+' · '+n+'×'+n;
@@ -1084,19 +1086,18 @@ async function srvJoin(code,raw){const st=$('mps');if($('nk'))NICK=($('nk').valu
   NET=await mkRoom(code);RC=code;ROOMN=code;netBind();pickSp()}catch(e){NET=null;SRV=SRV_DEF();if(N!=885)genWorld(885);const t=$('mps');if(t)t.textContent='Не удалось подключиться: '+(e&&(e.code||e.message)||'')}}
 // --- создание сервера ---
 let CS={size:885,ai:1,adm:1,name:''};
-function srvCreateUi(){if($('csn'))CS.name=$('csn').value;if($('csp'))CS.pw=$('csp').value;
- ov.innerHTML='<div class="det" style="width:100%"><h2>Новый сервер</h2><label>Пароль создателя<input id="csp" type="password" autocomplete="off" value="'+esc(CS.pw||'')+'"></label><label>Название сервера<input id="csn" maxlength="20" value="'+esc(CS.name)+'" placeholder="Сервер '+esc(NICK)+'"></label>'
+function srvCreateUi(){if($('csn'))CS.name=$('csn').value;
+ ov.innerHTML='<div class="det" style="width:100%"><h2>Новый сервер</h2><label>Название сервера<input id="csn" maxlength="20" value="'+esc(CS.name)+'" placeholder="Сервер '+esc(NICK)+'"></label>'
  +'<p style="margin:12px 0 4px;font-size:13px">Размер карты</p><div class="ml">'+SIZES.map(x=>'<button class="mb'+(CS.size==x[1]?' s':'')+'" onclick="csSet(\'size\','+x[1]+')">'+x[0]+' · '+x[1]+'</button>').join('')+'</div>'
  +'<p style="margin:12px 0 4px;font-size:13px">ИИ-враги (хищники и дейнозухи)</p><div class="ml"><button class="mb'+(CS.ai?' s':'')+'" onclick="csSet(\'ai\',1)">Включены</button><button class="mb'+(CS.ai?'':' s')+'" onclick="csSet(\'ai\',0)">Выключены</button></div>'
  +'<p style="margin:12px 0 4px;font-size:13px">Админ-панель</p><div class="ml"><button class="mb'+(CS.adm?' s':'')+'" onclick="csSet(\'adm\',1)">Есть</button><button class="mb'+(CS.adm?'':' s')+'" onclick="csSet(\'adm\',0)">Нет</button></div>'
  +'<p id="mps" class="tg"></p><button class="go" onclick="srvCreate()">Создать и войти</button><button class="bk" onclick="mpMenu()">Назад</button></div>'}
 function csSet(k,v){CS[k]=v;srvCreateUi()}
-async function srvCreate(){const pw=$('csp').value,st=$('mps');CS.name=$('csn').value.trim();
- if(pw!==SRV_PW){st.textContent='Неверный пароль';return}
+async function srvCreate(){const st=$('mps');CS.name=$('csn').value.trim();
  if(!ACC.user){st.textContent='Сначала войди через Google';return}
  const code='s'+Date.now().toString(36).slice(-5)+(R()*1296|0).toString(36),name=(CS.name||'Сервер '+NICK).slice(0,20);
  st.textContent='Создание…';
- try{await srvRef(code).set({name,size:CS.size,ai:CS.ai?1:0,adm:CS.adm?1:0,owner:ACC.user.uid,on:NICK,t:Date.now()})}catch(e){st.textContent='Не удалось создать: '+(e&&(e.code||e.message)||'');return}
+ try{await srvRef(code).set({name,size:CS.size,ai:CS.ai?1:0,adm:CS.adm?1:0,owner:ACC.user.uid,on:NICK,t:Date.now()})}catch(e){st.textContent=/permission/i.test(String(e&&(e.code||e.message)))?'Нет прав: твой аккаунт не добавлен в admins (см. инструкцию) или не обновлены правила Firebase':'Не удалось создать: '+(e&&(e.code||e.message)||'');return}
  srvJoin(code)}
 // --- админ-панель ---
 const isAdm=()=>!!(NET&&SRV.adm&&SRV.owner&&ACC.user&&ACC.user.uid==SRV.owner);
