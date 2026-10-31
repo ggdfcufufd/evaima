@@ -239,7 +239,9 @@ if(b.l>0){g.fillStyle='#c0405a';for(let k=0;k<3;k++){g.beginPath();g.arc(b.x+Mat
 [].forEach(c=>{g.globalAlpha=Math.min(1,c.t/20);g.fillStyle='#7a2e2a';g.beginPath();g.ellipse(c.x,c.y,c.r*1.3,c.r*.8,0,0,7);g.fill();g.strokeStyle='#e9e4cf';g.lineWidth=1.5;for(let k=-1;k<=1;k++){g.beginPath();g.moveTo(c.x+k*c.r*.5,c.y-c.r*.6);g.lineTo(c.x+k*c.r*.5,c.y+c.r*.6);g.stroke()}g.globalAlpha=1});
 
 
-if(P.bt>0){g.strokeStyle='rgba(255,255,255,.8)';g.lineWidth=3;g.beginPath();g.arc(P.x,P.y,P.r*2.2,P.a-.6,P.a+.6);g.stroke()}g.restore();drawWorld();drawSky();g.save();
+if(P.bt>0){const q=1-P.bt/.15;g.save();g.translate(P.x,P.y);g.rotate(P.a);
+ g.strokeStyle='rgba(255,235,190,'+(1-q)*.9+')';g.lineWidth=3+q*2;g.beginPath();g.arc(0,0,P.r*(1.5+q*1.2),-.62,.62);g.stroke();
+ for(let i=0;i<5;i++){const a=-.5+i*.25,rr=P.r*(1.8+q*1.3);g.fillStyle='rgba(255,220,150,'+(1-q)*.8+')';g.beginPath();g.arc(Math.cos(a)*rr,Math.sin(a)*rr,2+q*2,0,TAU);g.fill()}g.restore()}g.restore();drawWorld();drawSky();g.save();
 g.restore();
 // HUD
 let y=22;const st=['Малыш','Подросток','Субвзрослый','Взрослый'][P.gr<25?0:P.gr<55?1:P.gr<85?2:3];
@@ -791,9 +793,30 @@ pat=()=>{if([0,4,10,11,9].indexOf(oy)>=0){g.fillStyle='rgba(0,0,0,.3)';for(let k
 arms=()=>{if(!carn)return;const sc=oy==1?.55:oy==5?.6:1;[ca>=0?1:-1].forEach(s=>{Lb(r*.5,()=>{g.lineCap='round';const ex_=r*(.85+.4*sc*(feath?1.4:1)),ey=s*r*(.6+.2*sc);g.strokeStyle=sh(c,.3);g.lineWidth=r*.23;g.beginPath();g.moveTo(r*.8,s*r*.5);g.lineTo(ex_,ey);g.stroke();g.strokeStyle=sh(c,.85);g.lineWidth=r*.16;g.beginPath();g.moveTo(r*.8,s*r*.5);g.lineTo(ex_,ey);g.stroke();
  g.strokeStyle='#e6dcc0';g.lineWidth=r*.05;for(let k=-1;k<=1;k++){g.beginPath();g.moveTo(ex_,ey);g.lineTo(ex_+r*.2*sc,ey+k*r*.07+s*r*.05);g.stroke()}
  if(feath){g.fillStyle=sh(c,1.3);for(let k=0;k<3;k++)el(r*(.95+k*.16),s*r*(.62+k*.09),r*.3,r*.07)}})})},
-body=()=>{const b=dn(r*.24);Lb(r*.28,()=>{g.fillStyle=sh(c,1.2);el(b[0]+r*.1,b[1],r*1.12,r*.6)});
+body=()=>{const breath=1+Math.sin(TM*2.4+(oy||0))*.025, bob=Math.sin(ph*2)*r*.025;
+ Lb(r*.28+bob,()=>{g.fillStyle=sh(c,1.2);el(dn(r*.24)[0]+r*.1, dn(r*.24)[1],r*1.12*breath,r*.6*breath)});
  for(let j=0;j<4;j++)Lb(r*(.35+.16*j),()=>{F(.58+.13*j);el(0,0,r*1.3*(1-.03*j),r*.8*(1-.05*j))});
- Lb(r*.83,()=>{pat();F(1.3);el(r*.15,-r*.2,r*.6,r*.16)});arms()},
+ Lb(r*.83,()=>{pat();F(1.3);el(r*.15,-r*.2,r*.6,r*.16)});
+ // Рельефный гребень и блики чешуи делают силуэт объёмнее.
+ Lb(r*.92,()=>{g.fillStyle=sh(c,1.32);g.beginPath();g.moveTo(-r*.85,-r*.48);g.quadraticCurveTo(-r*.15,-r*1.02,r*.65,-r*.48);g.quadraticCurveTo(0,-r*.67,-r*.85,-r*.48);g.fill();
+   g.fillStyle='rgba(255,255,255,.12)';for(let k=0;k<5;k++){g.beginPath();g.arc(-r*.55+k*r*.28,-r*.43,r*.045,0,TAU);g.fill()}
+   // EVRIMA-inspired skin: layered fine scales, mottled pigmentation and muscle folds.
+   for(let row=0;row<4;row++)for(let col=0;col<13;col++){
+     const u=-r*.94+col*r*.155+(row%2)*r*.07,v=-r*.31+row*r*.19;
+     const n=hs(oy*31+row*17,col*13+oy);
+     g.fillStyle=n>.52?'rgba(12,16,13,.16)':'rgba(235,224,194,.10)';
+     g.beginPath();g.ellipse(u,v,r*(.035+n*.018),r*(.025+n*.012),-.18,0,TAU);g.fill();
+   }
+   g.strokeStyle='rgba(15,19,15,.20)';g.lineWidth=Math.max(1,r*.018);
+   for(let k=0;k<3;k++){g.beginPath();g.moveTo(-r*.62,-r*.12+k*r*.18);g.quadraticCurveTo(-r*.1,r*.02+k*r*.16,r*.58,-r*.1+k*r*.18);g.stroke()}
+ });
+ // Fine feather filaments along the neck and back on feathered species.
+ if(feath)Lb(r*.76,()=>{for(let side of [-1,1])for(let k=0;k<17;k++){
+   const u=-r*.72+k*r*.105,v=side*r*(.42+.035*Math.sin(k*1.7));
+   g.strokeStyle=k%3?'rgba(18,22,19,.48)':'rgba(220,207,174,.32)';g.lineWidth=Math.max(1,r*.025);
+   g.beginPath();g.moveTo(u,v);g.quadraticCurveTo(u-r*.07,v+side*r*.12,u-r*.16,v+side*r*.22);g.stroke();
+ }});
+ arms()},
 head=()=>{const hz=r*HZ[oy]+zb,hx=r*1.7+ru*.3,nz=r*.85+zb;
  if(oy==15){const N=14;for(let i=0;i<=N;i++){const t=i/N,u=r*(.9+t*3.2),z=r*(.8+t*1.1+Math.sin(t*3.1)*.3)+zb,v=Math.sin(TM*.8+t*2.5)*r*.18*t,q=r*(.52-.28*t);L(z,()=>{F(.78+.3*t);el(u,v,q*1.15,q)});L(z+q*.5,()=>{F(1.05+.2*t);el(u+r*.04,v,q*.7,q*.45)})}
   const hu=r*4.2,hz2=r*2.0+zb,hv=Math.sin(TM*.8+2.6)*r*.18;L(hz2,()=>{F(1.05);el(hu,hv,r*.4,r*.21);F(1.2);el(hu+r*.22,hv,r*.22,r*.16);g.fillStyle='rgba(0,0,0,.6)';[-1,1].forEach(s=>el(hu+r*.3,hv+s*r*.08,r*.04,r*.03))});
@@ -808,7 +831,10 @@ head=()=>{const hz=r*HZ[oy]+zb,hx=r*1.7+ru*.3,nz=r*.85+zb;
  if(oy==3)L(hz+r*.15,()=>{g.strokeStyle='#f1e8cc';g.lineWidth=r*.2;g.lineCap='round';[-1,1,0].forEach(s=>{g.beginPath();g.moveTo(hx+ru*.5,s*rv*.45);g.lineTo(hx+ru*(s?1.7:1.25),s*rv*(s?.6:0));g.stroke()})});
  if(oy==1)[0,1,2].forEach(k=>L(hz+rv*.45+k*r*.1,()=>{g.fillStyle='#efe6cf';[-1,1].forEach(s=>el(hx-ru*.12,s*rv*.7,r*(.11-.035*k),r*(.11-.035*k)))}));
  L(hz+rv*.25,()=>{g.fillStyle='rgba(0,0,0,.6)';[-1,1].forEach(s=>el(hx+ru*.85,s*rv*.28,r*.045,r*.03))});
- L(hz+rv*.3,()=>{[-1,1].forEach(s=>{F(.62);el(hx-ru*.08,s*rv*.7,r*.15,r*.075);g.fillStyle='#f0c850';el(hx-ru*.05,s*rv*.62,r*.1,r*.1);g.fillStyle='#000';el(hx-ru*.03,s*rv*.62,r*.03,r*.07);g.fillStyle='rgba(255,255,255,.8)';el(hx-ru*.08,s*rv*.58,r*.022,r*.022)})})};
+ L(hz+rv*.3,()=>{[-1,1].forEach(s=>{F(.62);el(hx-ru*.08,s*rv*.7,r*.15,r*.075);g.fillStyle='#f0c850';el(hx-ru*.05,s*rv*.62,r*.1,r*.1);g.fillStyle='#000';el(hx-ru*.03,s*rv*.62,r*.03,r*.07);g.fillStyle='rgba(255,255,255,.8)';el(hx-ru*.08,s*rv*.58,r*.022,r*.022)})});
+ // Small facial scales and a raised brow ridge for a more natural animal silhouette.
+ L(hz+rv*.12,()=>{for(let k=0;k<9;k++){const u=hx+ru*(.05+k*.17);g.fillStyle=k%2?'rgba(0,0,0,.17)':'rgba(235,224,194,.12)';el(u,-rv*.46-r*.025*(k%3),r*.055,r*.035)}
+   g.strokeStyle='rgba(15,18,15,.42)';g.lineWidth=r*.075;[-1,1].forEach(s=>{g.beginPath();g.moveTo(hx-ru*.2,s*rv*.48);g.quadraticCurveTo(hx+ru*.02,s*rv*.86,hx+ru*.32,s*rv*.55);g.stroke()})})};
 const ex=()=>{if(oy>8&&oy!=15&&oy!=11)exN(oy,r,c,Lb,F,el);
  if(oy==11){const N=18,zt=r*.8+zb,top=i=>r*(.35+1.15*Math.pow(Math.sin(Math.PI*i/N),.7)),base=i=>{const p=pt(-r*1.15+i/N*r*2.4,0);return[p[0],p[1]-zt]};
   g.fillStyle=sh(c,1.18);g.beginPath();for(let i=0;i<=N;i++){const b=base(i);i?g.lineTo(b[0],b[1]-top(i)):g.moveTo(b[0],b[1]-top(i))}for(let i=N;i>=0;i--){const b=base(i);g.lineTo(b[0],b[1])}g.closePath();g.fill();
@@ -963,7 +989,18 @@ ov.innerHTML='<div class="det" style="width:100%;overflow:auto;max-height:100%">
 const inRv=(x,y)=>{const gx=x/T|0,gy=y/T|0;return gx>=0&&gy>=0&&gx<N&&gy<N&&!!RV[gy*N+gx]};
 function dAng(o){const dt=Math.min(.1,Math.max(0,TM-(o._t||TM)));o._t=TM;if(o.da==null||!inRv(o.x,o.y)){o.da=o.a;return o.a}
 const d=((o.a-o.da+9.4248)%6.2832)-3.1416,mx=1.1*dt;o.da+=Math.max(-mx,Math.min(mx,d));return o.da}
-const dPh=(o,x,y)=>inRv(o.x,o.y)?TM*2.2:(x+y)/(o.r*.7);
+// Фаза походки зависит от реального перемещения: на месте динозавр не перебирает лапами.
+const dPh=(o,x,y)=>{
+  if(!o)return TM*.15;
+  const now=TM,px=o._animX==null?o.x:o._animX,py=o._animY==null?o.y:o._animY;
+  const dist=Math.hypot(o.x-px,o.y-py);
+  const dt=Math.max(.001,Math.min(.08,now-(o._animT==null?now:o._animT)));
+  o._animX=o.x;o._animY=o.y;o._animT=now;
+  const speed=dist/dt,weight=Math.max(0,Math.min(1,speed/55));
+  o._animPhase=(o._animPhase||0)+dt*(1.1+weight*8.5);
+  // Небольшое движение корпуса и хвоста даже в покое.
+  return o._animPhase + Math.sin(now*1.7+(o.ty||o.s||0))*.10*(1-weight);
+};
 // ====== территориальные бои хищников ======
 const predOk=(q,n)=>q!==n&&q.k=='p'&&!q.al&&!q.held&&q.ty!=8&&!q.kin&&q.life==null&&q.hp>0&&!(q.stun>0);
 function terr(n,dt){
