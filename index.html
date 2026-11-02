@@ -112,7 +112,7 @@ body.inmenu .b,body.inmenu #js{display:none!important}
 <div id="ov"></div>
 <script>
 const $=id=>document.getElementById(id),R=Math.random,TAU=Math.PI*2,cv=$('c'),g=cv.getContext('2d');
-const HBK=new Set(),HBD=[];let W,H,Z=1,keys={},P,npcs=[],bushes=[],cars=[],paused=true,last=0,hint='',hold={run:0,eat:0},jv={x:0,y:0},jid=null;
+const HBK=new Set(),HBD=[],HPL=[],HSET=[];let W,H,Z=1,keys={},P,npcs=[],bushes=[],cars=[],paused=true,last=0,hint='',hold={run:0,eat:0},jv={x:0,y:0},jid=null;
 function rs(){cv.width=W=innerWidth;cv.height=H=innerHeight;Z=Math.max(.8,Math.min(1.5,Math.min(W,H)/480))}rs();onresize=rs;
 // ---------- КАРТА ----------
 const T=32;let N=885,WS=N*T,map=new Uint8Array(N*N),FX=new Float32Array(N*N),FY=new Float32Array(N*N),RV=new Uint8Array(N*N),col=[];const MC={fillStyle:'',fillRect(){}},mm={getContext:()=>MC};
@@ -161,7 +161,7 @@ const rf=t=>Math.max(.7,Math.min(1.4,Math.pow(wNow(P.s,P.gr)/Math.max(.01,t.mh||
 function mkNpc(k,far){const[x,y]=rp(far),ty=k=='p'?PW[R()*PW.length|0]:HW[R()*HW.length|0],r=RAD[ty];return{x,y,a:R()*TAU,k,ty,c:k=='p'&&ty<9?['#8a2e2e','#7a3a1e','#5a2a40','#6a2020'][R()*4|0]:S[ty].c,r,hp:MASS[ty],mh:MASS[ty],sc:MASS[ty]/(r*(k=='p'?9:4)),cd:0,fl:0,wt:0,sp:1,fear:0,ch:0}}
 function start(si){const k=S[si].k;P={s:si,rb:0,stn:0,bld:0,rest:0,cc:null,sl:[],ps:[],xs:[null,null],xcd:[0,0],sp:0,gs:0,cnb:0,lay:0,acd:0,t:{s:0,d:0,a:0,c:0,b:0,g:0,v:0,rg:0,hd:0,sn:0,hk:0},dh:0,pts:0,got:0,age:0,x:0,y:0,a:0,r:8,k,hp:80,st:160,fd:80,wt:75,n:[50,50,50],gr:0,mu:[],cd:0,bt:0,hf:0,dead:false};P.hp=P.lm=maxhp();
 let r=0,f=0;for(;!f&&r<50;r++)for(let a=0;a<TAU&&!f;a+=.4){const x=WS/2+Math.cos(a)*r*T,y=WS/2+Math.sin(a)*r*T;if(tile(x,y)==3){P.x=x;P.y=y;f=1}}
-npcs=[];NFAR=[];PT=0;for(let i=0,n1=Math.round(420*SC());i<n1;i++)npcs.push(mkNpc('h',1));for(let i=0,n2=Math.round(66*DIF().pr*SC()*SRV.ai);i<n2;i++)npcs.push(mkNpc('p',1));
+npcs=[];NFAR=[];PT=0;for(let i=0,n1=hHerb();i<n1;i++)npcs.push(mkNpc('h',1));for(let i=0,n2=hPred()*SRV.ai;i<n2;i++)npcs.push(mkNpc('p',1));
 bushes=[];for(let i=0,nb=Math.round(10000*SC());i<nb;i++){const[x,y]=rp(),c=.45+R()*.3,l=.2+R()*.2;bushes.push({x,y,l:60,t:0,r:10,q:[1-c-l,l,c]})}
 cars=[];initWorldX(si);paused=false;tabOn=false;selS=selM=-1;LH='';if(NET)NET.emit('feed',{t:NICK+' родился: '+S[si].n}).catch(()=>{});$('ov').className='';$('ov').innerHTML=''}
 function menuOld(){$('ov').innerHTML='<div class="box"><h1>Остров мутантов</h1><p>Выживай, питайся, расти и мутируй. На каждой стадии роста выбирай мутацию: у каждой есть цена. Нутриенты усиливают тело: белки — лечение, липиды — выносливость, углеводы — скорость.</p><button class="o" onclick="start(0)">🦖 Хищник<small>Ешь туши добычи. Кусай травоядных.</small></button><button class="o" onclick="start(1)">🦕 Травоядный<small>Ешь кусты. Беги от хищников.</small></button><p style="margin-top:14px;font-size:12px;opacity:.7">WASD — ходьба, Shift — бег, Пробел — укус, E — есть и пить.</p></div>'}
@@ -327,9 +327,9 @@ L(hz+rv*.3,()=>{[-1,1].forEach(s=>{g.fillStyle='#f5e9c0';el(hx-ru*.1,s*rv*.6,r*.
 const ex=()=>{if(oy>8)exN(oy,r,c,L,F,el);if(oy==6)L(r*1.15,()=>{g.strokeStyle=sh(c,.75);g.lineWidth=r*.2;g.lineCap='round';g.beginPath();g.moveTo(r*1.9,0);g.lineTo(r*.5,0);g.stroke()});if(oy==7){L(r*.97,()=>{F(1.45);for(let k=-2;k<=2;k++)el(k*r*.45,0,r*.2,r*.55)});L(r*.5,()=>{F(.9);el(-r*2.7,0,r*.5,r*.5)})}};
 if(sa<-.1){head();body();tail()}else{tail();body();head()}ex()}
 function drawWorld(){bushes.forEach(b=>{if(b.x>CX-30&&b.x<CX+W/Z+30&&b.y>CY-30&&b.y<CY+H/Z/K+30)dr.push([b.y,7,b.x,b.y,b])});
-nests.forEach(n=>{if(n.x>CX-60&&n.x<CX+W/Z+60&&n.y>CY-60&&n.y<CY+H/Z/K+60)dr.push([n.y-30,12,n.x,n.y,n])});cars.forEach(c=>{if(!c.rcb)dr.push([c.y,8,c.x,c.y,c])});npcs.forEach(n=>{if(n.held||(n.x>CX-160&&n.x<CX+W/Z+160&&n.y>CY-160&&n.y<CY+H/Z/K+160))dr.push([n.held?P.y+.5:n.y,9,n.x,n.y,n])});dr.push([P.y,10,P.x,P.y,P]);HBD.forEach(b=>{if(Math.abs(b.x-P.x)<W/Z&&Math.abs(b.y-P.y)<H/Z/K+60)dr.push([b.y,21,b.x,b.y,b])});rem.forEach(o=>{if(o.al){dr.push([o.y,11,o.x,o.y,o]);if(o.cc){const d=o.r*2.1+o.cr*.8,cx=o.x+Math.cos(o.a)*d,cy=o.y+Math.sin(o.a)*d;dr.push([cy,8,cx,cy,{x:cx,y:cy,l:Math.max(.05,o.cf),l0:1,t:100,r:o.cr,ty:o.ct<0?undefined:o.ct,ch:o.cc==2,rm:1}])}}});dr.sort((p,q)=>p[0]-q[0]);
+nests.forEach(n=>{if(n.x>CX-60&&n.x<CX+W/Z+60&&n.y>CY-60&&n.y<CY+H/Z/K+60)dr.push([n.y-30,12,n.x,n.y,n])});cars.forEach(c=>{if(!c.rcb)dr.push([c.y,8,c.x,c.y,c])});npcs.forEach(n=>{if(n.held||(n.x>CX-160&&n.x<CX+W/Z+160&&n.y>CY-160&&n.y<CY+H/Z/K+160))dr.push([n.held?P.y+.5:n.y,9,n.x,n.y,n])});dr.push([P.y,10,P.x,P.y,P]);HBD.forEach(b=>{if(Math.abs(b.x-P.x)<W/Z&&Math.abs(b.y-P.y)<H/Z/K+60)dr.push([b.y,21,b.x,b.y,b])});HPL.forEach(v=>{if(Math.abs(v.x-P.x)<W/Z&&Math.abs(v.y-P.y)<H/Z/K+60)dr.push([v.y,22,v.x,v.y,v])});rem.forEach(o=>{if(o.al){dr.push([o.y,11,o.x,o.y,o]);if(o.cc){const d=o.r*2.1+o.cr*.8,cx=o.x+Math.cos(o.a)*d,cy=o.y+Math.sin(o.a)*d;dr.push([cy,8,cx,cy,{x:cx,y:cy,l:Math.max(.05,o.cf),l0:1,t:100,r:o.cr,ty:o.ct<0?undefined:o.ct,ch:o.cc==2,rm:1}])}}});dr.sort((p,q)=>p[0]-q[0]);
 dr.forEach(d=>{const t=d[1],x=d[2],y=d[3],o=d[4];g.save();g.translate((x-CX)*Z,(y-CY)*Z*K);g.scale(Z,Z);
-if(t==5)tree(x,y);else if(t==21)hDrawB(o);else if(t==6)rock(x,y);else if(t==7)bush(o);else if(t==8)carc(o);else if(t==12)drawNest(o);
+if(t==5)tree(x,y);else if(t==21)hDrawB(o);else if(t==22)hDrawV(o);else if(t==6)rock(x,y);else if(t==7)bush(o);else if(t==8)carc(o);else if(t==12)drawNest(o);
 else if(t==9){const sub=o.ty==8&&o.dv&&!o.held,vis=!sub||sniffOn()||P.s==8;if(o.held)g.translate(0,-P.r*.8);if(o.held&&P.dv)g.globalAlpha=.45;if(sub)g.globalAlpha=.38;if(o.sp>0){g.save();g.globalAlpha=o.sp*.7;g.strokeStyle='#e1f5ff';g.lineWidth=2.5;const rr=o.r+(1-o.sp)*o.r*4.5;g.beginPath();g.ellipse(0,0,rr,rr*K,0,0,7);g.stroke();g.restore()}if(vis)dino(dAng(o),o.r,o.c,o.fl,o.ty,o.ea>0,dPh(o,x,y));g.globalAlpha=1;if(o.held){const by=-o.r*2.4-8;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(-17,by,34,6);g.fillStyle='#4aa8e8';g.fillRect(-16,by+1,32*Math.max(0,o.ox)/100,4)}}else{if(o.dv)g.globalAlpha=.4;dino(o===P?o.a:dAng(o),o.r,S[o.s].c,o.hf,o.s,o.bt>0,dPh(o,x,y));g.globalAlpha=1}if(t==11)tag(o);if(t==9&&o.al)aTag(o);g.restore()})}
 const det=(i,can)=>{const x=M[i];return'<div class="dt"><h4>'+IC[i]+' '+x[0]+'</h4>'+Object.keys(x[2]).map(k=>{const v=x[2][k],gd=(k=='tdec'||k=='hdec')?v<0:v>0;return'<div class="'+(gd?'g':'r')+'">'+(gd?'+ ':'− ')+ML[k]+' '+(v>0?'+':'−')+Math.round(Math.abs(v)*100)+'%</div>'}).join('')+(M[i][3]||[]).map(t=>'<div class="g">✦ '+t+'</div>').join('')+(can?'<button '+(P.pts>0?'':'disabled')+' onclick="take3()">Мутировать слот '+(selS+1)+'</button>':'')+'</div>'};
 function take3(){if(selS<0||selM<0||P.pts<1||P.sl[selS]!=null||P.mu.indexOf(selM)>=0||!mAv(selM))return;P.sl[selS]=selM;P.mu.push(selM);P.pts--;P.hp=Math.min(maxhp(),P.hp+20*PSC());tabUi()}
@@ -1065,7 +1065,7 @@ carHint=function(tg){if(tg.ch)return'кусок мяса: '+(S[tg.ty]?S[tg.ty].n
 
 // ====================== СЕРВЕРЫ, НАСТРОЙКИ, АДМИН-ПАНЕЛЬ ======================
 const SIZES=[['Малая',500],['Средняя',885],['Большая',1200]],SRVP='servers';
-function SRV_DEF(){return{code:'',name:'',size:885,ai:1,adm:0,owner:''}}
+function SRV_DEF(){return{code:'',name:'',size:885,ai:1,dn:-1,hm:-1,adm:0,owner:''}}
 var SRV=SRV_DEF();function SC(){return Math.pow(N/885,2)}
 const sizeName=n=>(SIZES.find(x=>x[1]==n)||['Своя'])[0]+' · '+n+'×'+n;
 {const st=document.createElement('style');st.textContent='.sr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 12px;border:1px solid var(--bd);margin:6px 0;background:rgba(0,0,0,.25)}.sr b{flex:1 1 160px;font-size:15px;color:var(--ac)}.sr small{opacity:.75;font-size:12px}.sr button{width:auto;padding:8px 14px;background:transparent;color:var(--ac);border:1px solid var(--ac);font:13px Bahnschrift,Oswald,Roboto,Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase}.sr button.dl{color:#e0786f;border-color:#e0786f;padding:8px 10px}.ml .mb.s{border-color:var(--ac);color:var(--ac)}.ml .mb{width:auto;margin:0;padding:8px 12px;background:var(--sf);color:var(--tx);border:1px solid var(--bd);font:13px Bahnschrift,Oswald,Roboto,Arial,sans-serif}';document.head.appendChild(st)}
@@ -1078,30 +1078,31 @@ function mpMenu(){ACC.scr=0;ov.className='mn';
  const nk=$('nk')?$('nk').value:NICK;
  ov.innerHTML='<div class="det" style="width:100%"><h2>Серверы</h2><label>Ник<input id="nk" maxlength="14" value="'+esc(NICK)+'"></label><p id="mps" class="tg"></p><div id="sl"><p style="opacity:.6">Загрузка списка…</p></div><button class="go" onclick="srvCreateUi()">Создать сервер</button><button class="bk" onclick="mpMenu()">Обновить список</button><button class="bk" onclick="mpCode()">Войти по коду комнаты</button><button class="bk" onclick="menu()">Назад</button></div>';
  srvList().then(r=>{const e=$('sl');if(!e)return;const uid=ACC.user&&ACC.user.uid;
-  e.innerHTML=(r.err?'<p class="tg">'+esc(r.err)+'</p>':'')+r.out.map(o=>'<div class="sr"><b>'+esc(o.name||o.code)+'</b><small>'+sizeName(o.size|0||885)+' · ИИ-враги: '+(o.ai?'да':'нет')+(o.adm?' · ⚙ админ':'')+' · 👥 '+o.pl+(o.on?' · '+esc(o.on):'')+'</small><button onclick="srvJoin(\''+o.code+'\')">Войти</button>'+(o.owner&&o.owner==uid?'<button class="dl" title="Удалить сервер" onclick="srvDel(\''+o.code+'\')">✕</button>':'')+'</div>').join('')})}
+  e.innerHTML=(r.err?'<p class="tg">'+esc(r.err)+'</p>':'')+r.out.map(o=>'<div class="sr"><b>'+esc(o.name||o.code)+'</b><small>'+sizeName(o.size|0||885)+' · ИИ-враги: '+(o.ai?'да':'нет')+' · 🦖 '+(o.dn>=0?o.dn:'авто')+' · 🧑 '+(o.hm>=0?o.hm:'авто')+(o.adm?' · ⚙ админ':'')+' · 👥 '+o.pl+(o.on?' · '+esc(o.on):'')+'</small><button onclick="srvJoin(\''+o.code+'\')">Войти</button>'+(o.owner&&o.owner==uid?'<button class="dl" title="Удалить сервер" onclick="srvDel(\''+o.code+'\')">✕</button>':'')+'</div>').join('')})}
 function mpCode(){const c=prompt('Код комнаты (латиница и цифры)',RC);if(c)srvJoin(c.trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,20)||'ostrov',1)}
 async function srvDel(code){if(!confirm('Удалить сервер?'))return;try{await srvRef(code).remove()}catch(e){alert('Не удалось удалить: '+(e&&e.code||e))}mpMenu()}
 function netBind(){carsStart();NET.on('hit',onHit);NET.on('feed',m=>{if(m.data&&typeof m.data.t=='string')feed(m.data.t.slice(0,60))});NET.on('adm',onAdm)}
 async function srvJoin(code,raw){const st=$('mps');if($('nk'))NICK=($('nk').value.trim()||NICK).slice(0,14);try{localStorage.setItem('isle2d_nick',NICK)}catch(e){}
  if(!ACC.user){if(st)st.textContent='Сначала войди через Google';return}if(st)st.textContent='Подключение…';
  try{leaveNet(1);let cfg=null;if(code!='ostrov'){cfg=(await srvRef(code).once('value')).val();if(!cfg&&!raw){if(st)st.textContent='Сервер не найден (возможно, удалён)';SRV=SRV_DEF();return}}
-  SRV=Object.assign(SRV_DEF(),cfg||{},{code});SRV.size=[500,885,1200].indexOf(SRV.size|0)>=0?SRV.size|0:885;SRV.ai=SRV.ai?1:0;
+  SRV=Object.assign(SRV_DEF(),cfg||{},{code});SRV.size=[500,885,1200].indexOf(SRV.size|0)>=0?SRV.size|0:885;SRV.ai=SRV.ai?1:0;SRV.dn=+SRV.dn>=0&&+SRV.dn<=2000?Math.round(+SRV.dn):-1;SRV.hm=+SRV.hm>=0&&+SRV.hm<=300?Math.round(+SRV.hm):-1;
   if(N!=SRV.size){if(st)st.textContent='Генерация карты '+SRV.size+'×'+SRV.size+'…';await new Promise(r=>setTimeout(r,60));genWorld(SRV.size)}
   NET=await mkRoom(code);RC=code;ROOMN=code;netBind();safeResume()}catch(e){NET=null;SRV=SRV_DEF();if(N!=885)genWorld(885);const t=$('mps');if(t)t.textContent='Не удалось подключиться: '+(e&&(e.code||e.message)||'')}}
 // --- создание сервера ---
-let CS={size:885,ai:1,adm:1,name:''};
-function srvCreateUi(){if($('csn'))CS.name=$('csn').value;
+let CS={size:885,ai:1,dn:486,hm:10,adm:1,name:''};const LVL=[[0,'Нет'],[.5,'Мало'],[1,'Норма'],[2,'Много']],lvN=v=>(LVL.find(x=>x[0]==v)||LVL[2])[1];
+function srvCreateUi(){if($('csn'))CS.name=$('csn').value;if($('csd'))CS.dn=Math.max(0,Math.min(2000,+$('csd').value|0));if($('csh'))CS.hm=Math.max(0,Math.min(300,+$('csh').value|0));
  ov.innerHTML='<div class="det" style="width:100%"><h2>Новый сервер</h2><label>Название сервера<input id="csn" maxlength="20" value="'+esc(CS.name)+'" placeholder="Сервер '+esc(NICK)+'"></label>'
  +'<p style="margin:12px 0 4px;font-size:13px">Размер карты</p><div class="ml">'+SIZES.map(x=>'<button class="mb'+(CS.size==x[1]?' s':'')+'" onclick="csSet(\'size\','+x[1]+')">'+x[0]+' · '+x[1]+'</button>').join('')+'</div>'
  +'<p style="margin:12px 0 4px;font-size:13px">ИИ-враги (хищники и дейнозухи)</p><div class="ml"><button class="mb'+(CS.ai?' s':'')+'" onclick="csSet(\'ai\',1)">Включены</button><button class="mb'+(CS.ai?'':' s')+'" onclick="csSet(\'ai\',0)">Выключены</button></div>'
+ +'<label>Динозавры-ИИ на острове (точное число, 0–2000)<input id=\"csd\" type=\"number\" min=\"0\" max=\"2000\" value=\"'+CS.dn+'\"></label><label>Люди-ИИ на острове (точное число, 0–300)<input id=\"csh\" type=\"number\" min=\"0\" max=\"300\" value=\"'+CS.hm+'\"></label>'
  +'<p style="margin:12px 0 4px;font-size:13px">Админ-панель</p><div class="ml"><button class="mb'+(CS.adm?' s':'')+'" onclick="csSet(\'adm\',1)">Есть</button><button class="mb'+(CS.adm?'':' s')+'" onclick="csSet(\'adm\',0)">Нет</button></div>'
  +'<p id="mps" class="tg"></p><button class="go" onclick="srvCreate()">Создать и войти</button><button class="bk" onclick="mpMenu()">Назад</button></div>'}
 function csSet(k,v){CS[k]=v;srvCreateUi()}
-async function srvCreate(){const st=$('mps');CS.name=$('csn').value.trim();
+async function srvCreate(){const st=$('mps');CS.name=$('csn').value.trim();CS.dn=Math.max(0,Math.min(2000,+$('csd').value|0));CS.hm=Math.max(0,Math.min(300,+$('csh').value|0));
  if(!ACC.user){st.textContent='Сначала войди через Google';return}
  const code='s'+Date.now().toString(36).slice(-5)+(R()*1296|0).toString(36),name=(CS.name||'Сервер '+NICK).slice(0,20);
  st.textContent='Создание…';
- try{await srvRef(code).set({name,size:CS.size,ai:CS.ai?1:0,adm:CS.adm?1:0,owner:ACC.user.uid,on:NICK,t:Date.now()})}catch(e){st.textContent=/permission/i.test(String(e&&(e.code||e.message)))?'Нет прав: твой аккаунт не добавлен в admins (см. инструкцию) или не обновлены правила Firebase':'Не удалось создать: '+(e&&(e.code||e.message)||'');return}
+ try{await srvRef(code).set({name,size:CS.size,ai:CS.ai?1:0,dn:CS.dn,hm:CS.hm,adm:CS.adm?1:0,owner:ACC.user.uid,on:NICK,t:Date.now()})}catch(e){st.textContent=/permission/i.test(String(e&&(e.code||e.message)))?'Нет прав: твой аккаунт не добавлен в admins (см. инструкцию) или не обновлены правила Firebase':'Не удалось создать: '+(e&&(e.code||e.message)||'');return}
  srvJoin(code)}
 // --- админ-панель ---
 const isAdm=()=>!!(NET&&SRV.adm&&SRV.owner&&ACC.user&&ACC.user.uid==SRV.owner);
@@ -1288,7 +1289,7 @@ const HCR=[{id:'c_axe',i:'🪓',n:'Каменный топор',d:'Урон +20%
 {id:'c_arm',i:'🦺',n:'Кожаная броня',d:'Броня +20%',cost:{hide:4},m:{arm:.2}},
 {id:'c_med',i:'🩹',n:'Повязка',d:'Лечит 35% здоровья и останавливает кровотечение',cost:{hide:2}}];
 HCR.forEach(a=>{a.m=a.m||{};a.k=2;PSX[a.id]=a});
-function hStl(){const ty=new Set(HBD.map(b=>b.t)),L=Math.min(5,ty.size+(HBD.filter(b=>b.t=='wall').length>=4?1:0)),o=P.stl||0;if(L>o){P.pts+=L-o;P.stl=L;msg('🏘️ Поселение: уровень '+L+' · +очко навыков')}}
+function hStl(){const mi=HBD.filter(b=>!b.w),ty=new Set(mi.map(b=>b.t)),L=Math.min(6,ty.size+(mi.filter(b=>b.t=='wall').length>=4?1:0)+(HME&&HME.pop>=6?1:0)),o=P.stl||0;if(L>o){P.pts+=L-o;P.stl=L;msg('🏘️ Поселение: уровень '+L+' · +очко навыков')}}
 function hBuild(id){const b=HBLD.find(x=>x.id==id);if(!b||!hCan(b.cost))return msg('Не хватает ресурсов');
 const tx=(P.x+Math.cos(P.a)*(P.r+34))/T|0,ty=(P.y+Math.sin(P.a)*(P.r+34))/T|0,x=(tx+.5)*T,y=(ty+.5)*T;
 if([2,3,5].indexOf(hM2(x,y))<0||HBK.has(ty*N+tx)||Math.hypot(P.x-x,P.y-y)<P.r+18||HBD.some(o=>Math.hypot(o.x-x,o.y-y)<26))return msg('Сюда строить нельзя');
@@ -1316,6 +1317,56 @@ HBD.forEach(b=>{const d=Math.hypot(b.x-p.x,b.y-p.y);if(b.t=='fire'&&d<140){p.hp=
 const _drB=draw;draw=function(){_drB();if(!P||P.dead||P.s!=18||MS)return;const v=hIv(),r=hNr();g.save();g.setTransform(1,0,0,1,0,0);g.font='bold 13px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='center';
 const t=Object.keys(HRN).map(k=>HRN[k]+v[k]).join('   ')+(P.stl?'   🏘️'+P.stl:'');g.fillStyle='rgba(0,0,0,.6)';g.fillText(t,W/2+1,23);g.fillStyle='#e9e4cf';g.fillText(t,W/2,22);
 if(r&&!P.carry){const h='Удерживай '+EK()+' — '+(r=='wood'?'рубить дерево':'добывать камень');g.fillStyle='rgba(0,0,0,.6)';g.fillText(h,W/2+1,41);g.fillStyle=AC;g.fillText(h,W/2,40)}g.restore()};
+
+// ====================== ЛЮДИ: поселения как в WorldBox, но ты — один из людей; туман войны ======================
+let HME=null,HG=1,HFG=new Uint8Array(1),HMC=null,HC2=null,hlx=-1,hly=-1;
+const HCOL=['#1d4a7a','#3a8fb0','#cdb872','#4f7a35','#4f7a35','#2d5a2c','#777'];
+function hFogInit(){HG=Math.ceil(N/8);HFG=new Uint8Array(HG*HG);HMC=document.createElement('canvas');HMC.width=HMC.height=HG;HC2=HMC.getContext('2d');hlx=hly=-1}
+function hReveal(cx,cy){const Rr=5;for(let y=cy-Rr;y<=cy+Rr;y++)for(let x=cx-Rr;x<=cx+Rr;x++){if(x<0||y<0||x>=HG||y>=HG||(x-cx)*(x-cx)+(y-cy)*(y-cy)>Rr*Rr)continue;const k=y*HG+x;if(HFG[k])continue;HFG[k]=1;const i=Math.min(N-1,y*8+4)*N+Math.min(N-1,x*8+4);HC2.fillStyle=RV[i]&&!map[i]?'#2f86b8':HCOL[map[i]];HC2.fillRect(x,y,1,1)}}
+function hMarks(c,x0,y0,sz){const f=sz/WS,vis=(x,y)=>HFG[(y/(8*T)|0)*HG+(x/(8*T)|0)];HSET.forEach(s=>{if(s.ow=='me'||vis(s.x,s.y)){c.fillStyle=s.ow=='me'?'#ffd75a':'#e0674a';c.fillRect(x0+s.x*f-2.5,y0+s.y*f-2.5,5,5)}});
+HPL.forEach(v=>{if(HME&&v.s===HME){c.fillStyle='#7fb4ff';c.fillRect(x0+v.x*f-1,y0+v.y*f-1,2,2)}});c.fillStyle='#fff';c.fillRect(x0+P.x*f-2,y0+P.y*f-2,4,4)}
+const _hx=hudX;hudX=function(){const hm=P&&P.s==18&&HMC;if(hm){const mx=W-106,my=12;g.save();g.fillStyle='rgba(0,0,0,.6)';g.fillRect(mx-2,my-2,100,100);g.imageSmoothingEnabled=false;g.drawImage(HMC,mx,my,96,96);g.restore()}_hx();if(hm)hMarks(g,W-106,12,96)};
+const _tabV=tabUi;tabUi=function(){_tabV();if(!P||P.s!=18||!tabOn)return;const x=ov.querySelector('.tabs .x');if(x)x.insertAdjacentHTML('beforebegin','<button class="'+(tabN==2?'a':'')+'" onclick="tabN=2;tabUi()">Карта</button>');
+if(tabN==2){const bd=ov.querySelector('.body');if(bd){bd.innerHTML='<canvas id="hmap" width="360" height="360" style="width:100%;max-width:440px;display:block;margin:auto;background:#000"></canvas><p style="text-align:center;opacity:.65;font-size:12px">Карта открывается там, где ты прошёл. 🟨 твоё поселение · 🟥 чужие</p>';const c=$('hmap').getContext('2d');c.imageSmoothingEnabled=false;c.drawImage(HMC,0,0,360,360);hMarks(c,0,0,360)}}};
+// --- жители и поселения ---
+function hMkV(x,y,s){const v={x,y,a:R()*TAU,r:10,s,c:s?(s.ow=='me'?'#4a7ab0':'#b0654a'):'#9a8a6a',stt:'idle',tm:R()*2,sk:0};HPL.push(v);return v}
+function hPlace(s,t,w){for(let k=0;k<30;k++){const a=R()*TAU,d=70+R()*130,tx=(s.x+Math.cos(a)*d)/T|0,ty=(s.y+Math.sin(a)*d)/T|0,x=(tx+.5)*T,y=(ty+.5)*T;
+if([2,3,5].indexOf(hM2(x,y))<0||HBK.has(ty*N+tx)||HBD.some(o=>Math.hypot(o.x-x,o.y-y)<40)||Math.hypot(P.x-x,P.y-y)<30)continue;HBD.push({x,y,t,w});if(t=='hut')HBK.add(ty*N+tx);return 1}return 0}
+function hSite(s,j){const n=Date.now();if(!s.sc||n-s.sc.t>40000){const L={wood:[],stone:[],t:n},cx=s.x/T|0,cy=s.y/T|0;for(let y=cy-30;y<=cy+30;y++)for(let x=cx-30;x<=cx+30;x++){if(x<0||y<0||x>=N||y>=N)continue;const q=map[y*N+x];if(q==5&&L.wood.length<500)L.wood.push({x:(x+.5)*T,y:(y+.5)*T});else if(q==6&&L.stone.length<500)L.stone.push({x:(x+.5)*T,y:(y+.5)*T})}s.sc=L}
+const a=s.sc[j];if(!a.length)return null;let b=null,bd=1e9;for(let i=0;i<4;i++){const q=a[R()*a.length|0],d=Math.hypot(q.x-s.x,q.y-s.y);if(d<bd){b=q;bd=d}}return b}
+function hBush(s){let b=null,bd=700;bushes.forEach(q=>{if(q.l>0&&R()<.5){const d=Math.hypot(q.x-s.x,q.y-s.y);if(d<bd){b=q;bd=d}}});return b}
+function hMvTo(v,x,y,sp,dt){const d=Math.hypot(x-v.x,y-v.y);if(d<1)return d;v.a=Math.atan2(y-v.y,x-v.x);const ox=v.x,oy=v.y;mv(v,Math.cos(v.a)*sp*dt,Math.sin(v.a)*sp*dt);v.mvg=1;v.sk=Math.hypot(v.x-ox,v.y-oy)<sp*dt*.3?v.sk+dt:0;return d}
+function hVup(v,dt){v.tm-=dt;v.mvg=0;const s=v.s;
+if(!s){if(v.tm<=0){v.a=R()*TAU;v.tm=2+R()*4;v.w=R()<.6}if(v.w){mv(v,Math.cos(v.a)*38*dt,Math.sin(v.a)*38*dt);v.mvg=1}return}
+if(v.stt=='idle'){if(v.tm>0)return;const j=v.man||(s.st.wood<=s.st.stone*1.5&&s.st.wood<=s.st.food*1.5?'wood':s.st.stone<=s.st.food?'stone':'food');v.job=j;const tg=j=='food'?hBush(s):hSite(s,j);if(tg){v.tg=tg;v.stt='go';v.sk=0}else v.tm=3;return}
+if(v.stt=='go'){const tg=v.tg,d=hMvTo(v,tg.x,tg.y,62,dt);if(d<(v.job=='stone'?44:v.job=='food'?20:28)||(v.sk>1.5&&d<80)){v.stt='work';v.tm=2.6}else if(v.sk>6||(tg.l!=null&&tg.l<=0)){v.stt='idle';v.tm=1}return}
+if(v.stt=='work'){if(v.tm<=0){if(v.job=='food'&&v.tg.l!=null){v.tg.l=Math.max(0,v.tg.l-12);if(v.tg.l<=0)v.tg.t=45}v.ld=v.job;v.stt='back';v.sk=0}return}
+const d=hMvTo(v,s.x,s.y,62,dt);if(d<46||v.sk>6){if(v.ld)s.st[v.ld]+=v.ld=='food'?3:2;v.ld=null;v.stt='idle';v.tm=.5+R()}}
+function hSetTick(s,dt){s.tk=(s.tk||0)+dt;if(s.tk<1)return;s.tk=0;const vs=HPL.filter(v=>v.s===s);s.pop=vs.length;const hut=HBD.filter(b=>b.t=='hut'&&Math.hypot(b.x-s.x,b.y-s.y)<420).length;s.cap=3+2*hut;
+if(!vs.some(v=>Math.abs(v.x-P.x)<2400&&Math.abs(v.y-P.y)<2400)){s.st.wood+=.25*s.pop;s.st.stone+=.12*s.pop;s.st.food+=.3*s.pop}
+if(s.pop<s.cap&&s.st.food>=4){s.bt=(s.bt||0)+1;if(s.bt>=25){s.bt=0;s.st.food-=4;hMkV(s.x+R()*30-15,s.y+R()*30-15,s);if(s.ow=='me'){msg('👶 В поселении «'+s.nm+'» родился житель');hStl()}}}
+if(s.pop>=s.cap&&s.st.wood>=8&&hut<12&&hPlace(s,'hut',s.ow=='me'?0:1)){s.st.wood-=8;if(s.ow=='me'){msg('🛖 Жители построили хижину');hStl()}}}
+const hPred=()=>SRV.dn<0?Math.round(66*DIF().pr*SC()):Math.round(SRV.dn*66/486),hHerb=()=>SRV.dn<0?Math.round(420*SC()):SRV.dn-hPred();const HNS=['Ветрогорск','Камнеград','Зелёный Лог','Речная','Старый Дуб','Северная','Лесная','Заря'];let hEm=60,hNi=0;
+function hEmerge(){const nm=HPL.filter(v=>!v.s);if(nm.length<3)return;const n=nm[R()*nm.length|0];if(HSET.some(s=>Math.hypot(s.x-n.x,s.y-n.y)<1500)||Math.hypot(P.x-n.x,P.y-n.y)<700)return;const g2=nm.filter(v=>Math.hypot(v.x-n.x,v.y-n.y)<400);if(g2.length<3)return;
+const s={ow:'ai',nm:HNS[hNi++%HNS.length],x:n.x,y:n.y,st:{wood:6,stone:2,food:6},pop:0,cap:3};HSET.push(s);HBD.push({x:s.x,y:s.y,t:'fire',w:1});hPlace(s,'hut',1);g2.forEach(v=>{v.s=s;v.c='#b0654a';v.stt='idle';v.tm=0});if(Math.hypot(P.x-n.x,P.y-n.y)<2600)msg('🏘️ Люди основали поселение «'+s.nm+'»')}
+function hWorld(){for(let i=0,n=(SRV.hm<0?Math.round(10*SC()):SRV.hm);i<n;i++){const[x,y]=rp(1);hMkV(x,y,null)}}
+function hFound(){const v=hIv();if(HME||v.wood<8)return;v.wood-=8;const nm=['Новый приют','Очаг','Первая стоянка','Свобода'][R()*4|0];HME={ow:'me',nm,x:P.x,y:P.y,st:{wood:0,stone:0,food:0},pop:0,cap:3};HSET.push(HME);HBD.push({x:P.x,y:P.y,t:'fire',w:0});hStl();msg('🏘️ Основано поселение «'+nm+'». Зови людей (кнопка действия) и строй хижины')}
+function hRecruit(v){if(!HME)return msg('Сначала основай поселение (8 дерева)');if(HME.pop>=HME.cap)return msg('Нет места: построй хижину');v.s=HME;v.c='#4a7ab0';v.stt='idle';v.tm=0;HME.pop++;snd('up');msg('🤝 Новый житель в «'+HME.nm+'»');hStl()}
+function hOrder(v){const o=[null,'wood','stone','food'],i=(o.indexOf(v.man||null)+1)%4;v.man=o[i];v.stt='idle';v.tm=0;msg('📜 Приказ: '+['сам решает','рубить лес','добывать камень','добывать еду'][i])}
+function hCtx(){let v=null,bd=80;HPL.forEach(q=>{const d=Math.hypot(q.x-P.x,q.y-P.y);if(d<bd){v=q;bd=d}});const iv=hIv();
+if(v&&!v.s)return{l:'ПРИГЛАСИТЬ',h:'предложить присоединиться к поселению',f:()=>hRecruit(v)};
+if(v&&v.s===HME)return{l:'ПРИКАЗ',h:'сменить занятие жителя',f:()=>hOrder(v)};
+if(HME&&Math.hypot(HME.x-P.x,HME.y-P.y)<110){if(iv.wood+iv.stone>0)return{l:'СДАТЬ',h:'сдать дерево и камень на склад',f:()=>{HME.st.wood+=iv.wood;HME.st.stone+=iv.stone;iv.wood=iv.stone=0;snd('up')}};if(HME.st.wood+HME.st.stone>0)return{l:'ВЗЯТЬ',h:'взять дерево и камень со склада',f:()=>{iv.wood+=HME.st.wood|0;iv.stone+=HME.st.stone|0;HME.st.wood%=1;HME.st.stone%=1;snd('up')}}}
+if(!HME&&iv.wood>=8)return{l:'ОСНОВАТЬ',h:'основать поселение (8 дерева)',f:hFound};return null}
+const _nA=nestAct;nestAct=function(){if(P&&P.s==18){if(paused||P.dead)return;const c=hCtx();if(c)c.f();return}_nA()};bt('ng',0,()=>nestAct());
+function hDrawV(v){human(v.a,v.r,v.c,0,v.mvg?TM*9+v.x:0);const nr=Math.hypot(v.x-P.x,v.y-P.y)<90,ic=!v.s?(nr?'👋':''):v.ld?{wood:'🪵',stone:'🪨',food:'🍖'}[v.ld]:v.stt=='work'?'⚒️':'';if(ic){g.font='13px sans-serif';g.textAlign='center';g.fillText(ic,0,-v.r*3.2)}}
+const _stV=start;start=function(si){_stV(si);HPL.length=0;HSET.length=0;HME=null;hEm=60;hNi=0;hFogInit();if(S[si].k==2)hWorld()};
+const _upV=upX;upX=function(dt){_upV(dt);const p=P;if(!p||p.s!=18||p.dead||!HMC)return;const cx=p.x/(8*T)|0,cy=p.y/(8*T)|0;if(cx!=hlx||cy!=hly){hlx=cx;hly=cy;hReveal(cx,cy)}
+HPL.forEach(v=>{if(Math.abs(v.x-p.x)<2400&&Math.abs(v.y-p.y)<2400)hVup(v,dt)});HSET.forEach(s=>hSetTick(s,dt));if((hEm-=dt)<=0){hEm=90;hEmerge()}};
+const _drV=draw;draw=function(){_drV();if(!P||P.dead||P.s!=18||MS)return;const c=hCtx(),b=$('ng');b.style.display=c?'flex':'none';b.style.opacity=1;if(c&&b.textContent!=c.l)b.textContent=c.l;
+g.save();g.setTransform(1,0,0,1,0,0);g.font='bold 12px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='center';
+if(HME){const t='🏘️ '+HME.nm+' · 👥 '+HME.pop+'/'+HME.cap+' · 🪵'+(HME.st.wood|0)+' 🪨'+(HME.st.stone|0)+' 🍖'+(HME.st.food|0);g.fillStyle='rgba(0,0,0,.6)';g.fillText(t,W/2+1,59);g.fillStyle='#ffd75a';g.fillText(t,W/2,58)}
+if(c){const h=NK()+' — '+c.h;g.fillStyle='rgba(0,0,0,.6)';g.fillText(h,W/2+1,77);g.fillStyle=AC;g.fillText(h,W/2,76)}g.restore()};
 let th0=0;try{th0=+localStorage.getItem('isle2d_theme')||0}catch(e){}if(!TH[th0])th0=0;
 accInit();applyTheme(th0);menu();requestAnimationFrame(loop);
 </script></body></html>
