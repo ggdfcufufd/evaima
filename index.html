@@ -97,6 +97,12 @@ body.inmenu .b,body.inmenu #js{display:none!important}
 @media (hover:hover) and (pointer:fine){#js,#run,#eat,#bite,#ab,#dv,#a2,#a3,#ng,#rs,#carr,#tb{display:none!important}}
 #rs{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(160px + env(safe-area-inset-bottom,0px));width:56px;height:56px;font-size:10px}
 #carr{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(224px + env(safe-area-inset-bottom,0px));width:56px;height:56px;font-size:10px}
+
+.tr{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px}.th{text-align:center;font-size:11px;letter-spacing:.08em;color:var(--ac)}
+.tn{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 3px;background:#101b12;border:1px solid var(--bd);color:var(--tx);font:11px Bahnschrift,Oswald,Roboto,Arial,sans-serif;text-align:center;opacity:.45;min-height:96px;border-radius:0}
+.tn span{font-size:22px}.tn b{font-size:12px;color:var(--ac)}.tn em{font-style:normal;opacity:.85;font-size:10px;line-height:1.25}.tn small{font-size:9px;color:#d9695a}
+.tn.ok{opacity:1;border-color:var(--ac)}.tn.own{opacity:1;background:rgba(214,162,74,.22);border-color:var(--ac)}
+.tn.ln::before{content:'';position:absolute;top:-17px;left:50%;height:16px;border-left:2px solid var(--bd)}.tn.pk::before{border-color:var(--ac)}
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="js"><div id="kn"></div></div>
@@ -187,9 +193,9 @@ if(p.fd>35&&p.wt>35)p.gr=Math.min(100,p.gr+dt*DIF().grow*(.35+.3*(p.n[0]+p.n[1]+
 while(p.got<4&&p.gr>=SL[p.got]){p.got++;p.pts++}upX(dt);
 // еда и вода
 hint='';let tg=null,td=1e9;const src=p.k?bushes:cars;
-src.forEach(s=>{if(s.l>0&&!s.rcb){const d=Math.hypot(s.x-p.x,s.y-p.y);if(d<p.r*1.6+s.r+14&&d<td){tg=s;td=d}}});
+src.forEach(s=>{if(s.l>0&&!s.rcb){const d=Math.hypot(s.x-p.x,s.y-p.y);if(d<p.r*1.6+s.r+14&&d<td){tg=s;td=d}}});if(p.k==2)cars.forEach(s=>{if(s.l>0&&!s.rcb){const d=Math.hypot(s.x-p.x,s.y-p.y);if(d<p.r*1.6+s.r+14&&d<td){tg=s;td=d}}});
 const wa=tile(p.x,p.y)<2||tile(p.x+Math.cos(p.a)*(p.r+10),p.y+Math.sin(p.a)*(p.r+10))<2;
-if(tg){hint=p.k?'Удерживай '+EK()+' — куст':'Удерживай '+EK()+' — '+carHint(tg);if(hold.eat||dn('eat')){eatT(tg,dt)}}
+if(tg){hint=(p.k==2?tg.ty==null:p.k)?'Удерживай '+EK()+' — куст':'Удерживай '+EK()+' — '+carHint(tg);if(hold.eat||dn('eat')){eatT(tg,dt)}}
 else if(wa){hint='Удерживай '+EK()+' — вода';if(hold.eat||dn('eat'))p.wt=Math.min(100,p.wt+35*dt)}
 if(p.s==8&&tile(p.x,p.y)==0)hint=p.dv?'Под водой · '+DK()+' — всплыть, '+BK()+' — атака из засады':(coarse()?'ВНИЗ':DK())+' — нырнуть';
 if(sw)hint=p.st>0?'Плывёшь — выносливость тает':'ТОНЕШЬ! Выбирайся на берег';
@@ -246,7 +252,7 @@ let y=22;const st=['Малыш','Подросток','Субвзрослый','�
 hexHud();
 
 
-$('tb').classList.toggle('on',P.pts>0||P.sp>0);hudX();{const e=$('dv'),t2=P.dv?'ВВЕРХ':'ВНИЗ';e.style.display=P.s==8?'flex':'none';if(e.textContent!=t2)e.textContent=t2}{const a=AB[P.s],tx=P.carry?'Бросок':P.acd>0?String(Math.ceil(P.acd)):a[0],e=$('ab');if(e.textContent!=tx)e.textContent=tx;e.style.opacity=P.carry||!(P.acd>0)?1:.5}if(P.pts>0||P.sp>0){g.textAlign='center';g.font='bold 14px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText('Доступна '+(P.pts>0?'мутация':'')+(P.pts>0&&P.sp>0?' и ':'')+(P.sp>0?'навык':'')+' — Tab / ☰',W/2,H-175)}if(P.carry){const c=P.carry,bw=130,bx=W/2-bw/2,by=H-132;g.textAlign='center';g.font='9px Bahnschrift,Oswald,Roboto,Arial,sans-serif';[['Кислород добычи',c.ox,100,'#4aa8e8'],['Здоровье добычи',c.hp,c.mh,'#c0463c']].forEach((r,i)=>{const yy=by+i*15;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(bx,yy,bw,11);g.fillStyle=r[3];g.fillRect(bx,yy,bw*Math.max(0,r[1])/r[2],11);g.fillStyle='#fff';g.fillText(r[0],W/2,yy+8.5)});g.textAlign='left'}if(hint){g.textAlign='center';g.font='13px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='#e9e4cf';g.fillText(hint,W/2,H-150)}g.textAlign='left';if(NET){const tn=Date.now();FD=FD.filter(f=>tn-f.e<9000);g.textAlign='center';g.font='11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText('● '+ROOMN+' · игроков: '+(rem.size+1)+(!NET.connected||NET.connected()?'':' · нет связи'),W/2,16);g.fillStyle='#e9e4cf';FD.forEach((f,i)=>g.fillText(f.t,W/2,32+i*13));g.textAlign='left'}}
+$('tb').classList.toggle('on',P.pts>0||P.sp>0);hudX();{const e=$('dv'),t2=P.dv?'ВВЕРХ':'ВНИЗ';e.style.display=P.s==8?'flex':'none';if(e.textContent!=t2)e.textContent=t2}{const a=AB[P.s],tx=P.carry?'Бросок':P.acd>0?String(Math.ceil(P.acd)):a[0],e=$('ab');if(e.textContent!=tx)e.textContent=tx;e.style.opacity=P.carry||!(P.acd>0)?1:.5}if(P.pts>0||P.sp>0){g.textAlign='center';g.font='bold 14px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText(P.s==18?'Очки в дереве навыков: '+(P.pts+P.sp)+' — Tab / ☰':'Доступна '+(P.pts>0?'мутация':'')+(P.pts>0&&P.sp>0?' и ':'')+(P.sp>0?'навык':'')+' — Tab / ☰',W/2,H-175)}if(P.carry){const c=P.carry,bw=130,bx=W/2-bw/2,by=H-132;g.textAlign='center';g.font='9px Bahnschrift,Oswald,Roboto,Arial,sans-serif';[['Кислород добычи',c.ox,100,'#4aa8e8'],['Здоровье добычи',c.hp,c.mh,'#c0463c']].forEach((r,i)=>{const yy=by+i*15;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(bx,yy,bw,11);g.fillStyle=r[3];g.fillRect(bx,yy,bw*Math.max(0,r[1])/r[2],11);g.fillStyle='#fff';g.fillText(r[0],W/2,yy+8.5)});g.textAlign='left'}if(hint){g.textAlign='center';g.font='13px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle='#e9e4cf';g.fillText(hint,W/2,H-150)}g.textAlign='left';if(NET){const tn=Date.now();FD=FD.filter(f=>tn-f.e<9000);g.textAlign='center';g.font='11px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.fillStyle=AC;g.fillText('● '+ROOMN+' · игроков: '+(rem.size+1)+(!NET.connected||NET.connected()?'':' · нет связи'),W/2,16);g.fillStyle='#e9e4cf';FD.forEach((f,i)=>g.fillText(f.t,W/2,32+i*13));g.textAlign='left'}}
 function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;TM=t/1000;if(P)wxTick(dt);if(P&&!paused){upd(dt);dinoCol()}netTick(dt);draw();requestAnimationFrame(loop)}
 // ---------- УПРАВЛЕНИЕ ----------
 addEventListener('keyup',e=>delete keys[e.code]);
@@ -269,7 +275,7 @@ let sel=0,tabOn=false,tabN=0;const ov=$('ov');
 const sv=c=>'<svg viewBox="-60 -30 120 60" width="100%" height="120"><path d="M-55 0L-20-14V14Z" fill="'+c+'"/><ellipse rx="26" ry="18" fill="'+c+'"/><circle cx="26" r="11" fill="'+c+'"/><circle cx="31" cy="-4" r="2"/><circle cx="31" cy="4" r="2"/></svg>';
 function menu(){ov.className='mn';ov.innerHTML='<div class="ttl"><h1>ОСТРОВ</h1><i>Эволюция мутантов · v'+VER+'</i></div><div class="acc" onclick="accMenu()">'+accChip()+'</div><nav><button onclick="leaveNet();pickSp()">Одиночная игра</button><button onclick="mpMenu()">Мультиплеер</button><button onclick="accMenu()">Аккаунт</button><button onclick="ctrl()">Управление</button><button onclick="clog()">Список изменений</button><small style="opacity:.6;padding:10px 14px 0">Цвет интерфейса</small><div class="sw">'+TH.map((t,i)=>'<button style="background:'+t[0]+'" class="'+(i==th?'a':'')+'" title="'+t[4]+'" onclick="applyTheme('+i+');menu()"></button>').join('')+'</div></nav>'}
 function ctrlOld(){ov.innerHTML='<div class="det" style="width:100%"><h2>Управление</h2><p>ПК: WASD — ход, Shift — бег, ЛКМ (или Пробел, J) — укус, E — способность вида (у Дейнозуха рывок: хватает динозавра в пасть, повторно — бросок), F — нырок (Дейнозух; с добычей в пасти — утопить её), Q — есть и пить (удерживай), Tab — меню персонажа.</p><p>Телефон: джойстик слева, кнопки УКУС, БЕГ, ЕСТЬ/ПИТЬ и Способность справа, ☰ — меню персонажа.</p><p>Хищники едят туши, травоядные — кусты. Пей у воды. Не водные виды в глубокой воде теряют выносливость и, когда она кончится, тонут; на реке есть мелкие броды, течение сносит. Очко мутации даётся на 20%, 40%, 65% и 90% роста.</p><p>Z и X — дополнительные способности (слоты на 15% и 50% роста, выбираются во вкладке «Навыки», там же пассивные навыки за очки). R — построить гнездо или высидеть яйцо в гнезде (союзник ИИ; в мультиплеере яйца только еда, а союзники — игроки твоей команды). Яйца можно есть (удерживай ЕСТЬ). Время суток и погода меняются; ночью и в тумане тебя хуже замечают. Съешь 5 сородичей своего вида — откроется секретная мутация.</p><button class="bk" onclick="menu()">Назад</button></div>'}
-function pickSp(){const s=S[sel],sg=v=>{const n=Math.max(1,Math.min(10,Math.round(v/1.6*10)));return'<div class="sg">'+'<i class="on"></i>'.repeat(n)+'<i></i>'.repeat(10-n)+'</div>'};ov.className='mn';ov.innerHTML='<div class="sp"><div class="lst"><h2>Выбор динозавра</h2>'+[0,1].map(k=>'<h3>'+(k?'Травоядные':'Хищники')+'</h3>'+S.map((x,i)=>x.k==k?'<button class="'+(i==sel?'a':'')+'" onclick="sel='+i+';pickSp()">'+x.n+'</button>':'').join('')).join('')+'<button class="bk" onclick="menu()">Назад</button></div><div class="det"><div id="pv" style="height:200px"></div><h2>'+s.n+'</h2><p class="tg">'+(s.k?'Травоядное':'Хищник')+(NET?' · комната '+esc(ROOMN):'')+'</p><p>'+s.d+'</p><p class="tg">Способность: '+AB[sel][0]+' — '+AB[sel][3]+'</p>'+[['Скорость','spd'],['Урон','dmg']].map(t=>'<div class="st"><span>'+t[0]+'</span>'+sg(s[t[1]])+'</div>').join('')+'<div class="kv"><span>Вес = здоровье</span><b>'+fkg(MASS[sel])+'</b></div><button class="go" onclick="start(sel)">Родиться</button></div></div>'}
+function pickSp(){const s=S[sel],sg=v=>{const n=Math.max(1,Math.min(10,Math.round(v/1.6*10)));return'<div class="sg">'+'<i class="on"></i>'.repeat(n)+'<i></i>'.repeat(10-n)+'</div>'};ov.className='mn';ov.innerHTML='<div class="sp"><div class="lst"><h2>Выбор динозавра</h2>'+[0,1,2].map(k=>'<h3>'+['Хищники','Травоядные','Люди'][k]+'</h3>'+S.map((x,i)=>x.k==k?'<button class="'+(i==sel?'a':'')+'" onclick="sel='+i+';pickSp()">'+x.n+'</button>':'').join('')).join('')+'<button class="bk" onclick="menu()">Назад</button></div><div class="det"><div id="pv" style="height:200px"></div><h2>'+s.n+'</h2><p class="tg">'+['Хищник','Травоядное','Человек'][s.k]+(NET?' · комната '+esc(ROOMN):'')+'</p><p>'+s.d+'</p><p class="tg">Способность: '+AB[sel][0]+' — '+AB[sel][3]+'</p>'+[['Скорость','spd'],['Урон','dmg']].map(t=>'<div class="st"><span>'+t[0]+'</span>'+sg(s[t[1]])+'</div>').join('')+'<div class="kv"><span>Вес = здоровье</span><b>'+fkg(MASS[sel])+'</b></div><button class="go" onclick="start(sel)">Родиться</button></div></div>'}
 const stg=()=>['Малыш','Подросток','Субвзрослый','Взрослый'][P.gr<25?0:P.gr<55?1:P.gr<85?2:3];
 const nb=(l,v,c,n)=>'<div class="nb"><span>'+l+'</span><i><b style="width:'+Math.max(0,Math.min(100,v))+'%;background:'+c+'"></b></i><em>'+n+'</em></div>';
 function toggleTab(){if(!P||P.dead||(paused&&!tabOn))return;tabOn=!tabOn;paused=tabOn&&!NET;if(tabOn)tabUi();else{ov.className='';ov.innerHTML=''}}
@@ -405,7 +411,7 @@ M.push(
 ['Невероятный нюх','Чует дейнозухов под водой, здоровье −6%',{hp:-.06},['Единственное, что позволяет увидеть затаившегося под водой дейнозуха','Показывает его на экране, у края экрана и на карте знаком 🐊','Других динозавров не показывает']],
 ['Каннибализм','Секретная: урон +20%, здоровье −8%',{dmg:.2,hp:-.08},['Туши питают на 40% сильнее','Урон по сородичам своего вида ×1.5','Мясо сородичей дополнительно лечит']]);
 IC.push('🧬','👃','🦷');
-const MX={8:0,10:0},SEC=[10],mAv=i=>SEC.indexOf(i)<0&&(MX[i]==null||MX[i]===P.k),hasMu=i=>!!P&&P.mu.indexOf(i)>=0,hasPs=id=>!!P&&P.ps.indexOf(id)>=0;
+const MX={8:0,10:0},SEC=[10],mAv=i=>SEC.indexOf(i)<0&&(MX[i]==null||MX[i]===P.k),hasMu=i=>!!P&&P.mu.indexOf(i)>=0,hasPs=id=>!!P&&P.ps.some(x=>x===id||(PSX[x]&&PSX[x].a===id));
 const RAD=[16,24,9,14,22,30,13,15,36,15,19,32,7,24,14,34,22];
 let TS=[],nests=[],NH=null,VF=1,OFF=0,TEAM='';
 const msg=t=>{TS.push({t,e:Date.now()});if(TS.length>3)TS.shift()};
@@ -765,7 +771,7 @@ eatT=function(tg,dt){const p=P,f0=p.fd,n0=p.n.slice();_eatT(tg,dt);
 const HDM=[[.85,.42],[.8,.6],[.5,.3],[.9,.5],[1,.5],[1.1,.62],[.7,.36],[.6,.5],[1,.4],[.9,.38],[.9,.4],[1.25,.36],[.7,.28],[.5,.26],[.5,.4],[.5,.3],[.5,.34]];
 const CARN=[1,1,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0].map(Boolean),FEATH=[0,10,12];
 const HZ=[.9,.95,.85,.45,.95,1,1.05,.3,0,.9,.9,.9,.8,0,.85,0,1.2];HDM.push([.95,.5]);CARN.push(true);HZ.push(.95);
-function dino(a,r,c,fl,ty,op,ph){const oy=ty;ty=BM[ty];if(oy==8)return croc(a,r,fl>0?'#ffffff':c,op,ph);if(fl>0)c='#ffffff';
+function dino(a,r,c,fl,ty,op,ph){const oy=ty;if(oy==18)return human(a,r,c,fl,ph);ty=BM[ty];if(oy==8)return croc(a,r,fl>0?'#ffffff':c,op,ph);if(fl>0)c='#ffffff';
 const ca=Math.cos(a),sa=Math.sin(a),pt=(u,v)=>[u*ca-v*sa,(u*sa+v*ca)*K],
 L=(z,f)=>{g.save();g.translate(0,-z);g.scale(1,K);g.rotate(a);f();g.restore()},el=(u,v,x,y)=>{g.beginPath();g.ellipse(u,v,x,y,0,0,7);g.fill()},F=f=>{g.fillStyle=sh(c,f)};
 const bip=ty<3,carn=CARN[oy],feath=FEATH.indexOf(oy)>=0,lf=bip?r*.8:oy==15?r*.62:r*.46,zb=lf+Math.abs(Math.sin(ph))*r*.05+Math.sin(TM*2.2+oy)*r*.015,dn=s=>[sa*s/K,ca*s/K],hd=HDM[oy],ru=r*hd[0],rv=r*hd[1];
@@ -1226,6 +1232,47 @@ function safeResume(){let sv=null;try{const j=localStorage.getItem(SAFEK(SRV.cod
   setTimeout(()=>msg('🚪 Ты вернулся на то же место'),300)}catch(e){pickSp()}}
 const _upS=upX;upX=function(dt){_upS(dt);safeTick(dt)};
 const _drawS=draw;draw=function(){_drawS();if(SX&&!MS&&P&&!P.dead){g.save();g.setTransform(1,0,0,1,0,0);g.font='bold 15px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='center';const t='🚪 Безопасный выход: '+Math.ceil(Math.max(0,SAFE_T-SX.t))+' с';g.fillStyle='rgba(0,0,0,.6)';g.fillText(t,W/2+1,H*.14+1);g.fillStyle='#e9e4cf';g.fillText(t,W/2,H*.14);g.restore()}};
+
+// ====================== ЛЮДИ: дерево навыков, без мутаций ======================
+S.push({n:'Человек',k:2,c:'#6f8a5a',hp:.8,spd:1.05,dmg:.8,sz:.7,d:'Слабый, но умный. Мутаций нет: развивается по дереву навыков (копьё, огонь, знахарство, следопытство). Ест и ягоды, и мясо. Способность «Факел» отпугивает зверей.'});
+MASS.push(70);RAD.push(12);NQ[18]=[.5,.4,.1];
+AB[18]=['Факел',18,()=>{P.t.d=6;near(320,n=>{if(n.k=='h')n.fear=5;else{n.stun=2;n.ch=0}})},'отпугивает травоядных, оглушает хищников на 2 с'];
+const HT=[
+{id:'h_str',i:'💪',n:'Закалка',d:'Здоровье +12%',m:{hp:.12},c:0,r:0},
+{id:'h_med',i:'🌿',n:'Знахарство',d:'Лечение +40%',m:{reg:.4},c:0,r:1,p:['h_str']},
+{id:'h_fod',i:'🍖',n:'Запасливость',d:'Голод −20%',m:{hdec:-.2},c:0,r:2,p:['h_med']},
+{id:'h_wat',i:'💧',n:'Фляга',d:'Жажда −30%, здоровье +8%',m:{tdec:-.3,hp:.08},c:0,r:3,p:['h_fod']},
+{id:'h_spr',i:'🔱',n:'Копьё',d:'Урон +25%',m:{dmg:.25},c:1,r:0},
+{id:'h_fin',i:'🎯',n:'Добивание',d:'+30% урона по целям с HP ниже 40%',a:'fn',c:1,r:1,p:['h_spr']},
+{id:'h_hnt',i:'🔥',n:'Азарт охоты',d:'После убийства скорость +25% на 5 с',a:'hz',c:1,r:2,p:['h_fin']},
+{id:'h_knf',i:'🔪',n:'Разделка',d:'Туши едятся на 40% быстрее',a:'sc',c:1,r:3,p:['h_hnt']},
+{id:'h_run',i:'👟',n:'Бегун',d:'Скорость +8%, выносливость +25%',m:{spd:.08,stm:.25},c:2,r:0},
+{id:'h_hid',i:'🧥',n:'Шкуры',d:'Броня +15%',m:{arm:.15},c:2,r:1,p:['h_run']},
+{id:'h_esc',i:'💨',n:'Бегство',d:'Скорость +25% при здоровье ниже 35%',a:'pb',c:2,r:2,p:['h_hid']},
+{id:'h_shd',i:'🛡️',n:'Щит',d:'Броня +10%, здоровье +10%',m:{arm:.1,hp:.1},c:2,r:3,p:['h_esc']},
+{id:'h_fir',i:'🕯️',n:'Огонь',d:'Ночью почти светло как днём',a:'nv',c:3,r:0},
+{id:'h_shl',i:'⛺',n:'Укрытие',d:'Дождь не замедляет и поит вдвое сильнее',a:'wx',c:3,r:1,p:['h_fir']},
+{id:'h_trk',i:'👂',n:'Следопыт',d:'Показывает хищников в радиусе 450',a:'cr',c:3,r:2,p:['h_shl']},
+{id:'h_top',i:'👑',n:'Хозяин острова',d:'Здоровье +20%, урон +15%, скорость +5%',m:{hp:.2,dmg:.15,spd:.05},c:3,r:3,p:['h_trk','h_knf']}];
+const HTD={};HT.forEach(a=>{a.m=a.m||{};a.k=2;PSX[a.id]=HTD[a.id]=a});
+const hPool=()=>P.pts+P.sp,hHas=id=>P.ps.indexOf(id)>=0;
+function takeH(id){const a=HTD[id];if(!P||P.s!=18||!a||hHas(id)||hPool()<1||(a.p||[]).some(q=>!hHas(q)))return;if(P.sp>0)P.sp--;else P.pts--;P.ps.push(id);P.hp=Math.min(maxhp(),P.hp+15*PSC());snd('up');tabUi()}
+function treeHtml(){let h='<p class="pts">Очки навыков: <b>'+hPool()+'</b><small>Очки дают рост, каждое 3-е убийство и каждые 2,5 минуты жизни. Мутаций у людей нет.</small></p><div class="tr">'+['🌿 Выживание','🏹 Охота','🏃 Защита','🛠️ Знания'].map(c=>'<div class="th">'+c+'</div>').join('');
+for(let r=0;r<4;r++)for(let c=0;c<4;c++){const a=HT.find(x=>x.c==c&&x.r==r),own=hHas(a.id),pk=!a.p||a.p.every(hHas),ok=!own&&pk;
+h+='<button class="tn'+(own?' own':ok?' ok':'')+(a.p?' ln':'')+(pk?' pk':'')+'" '+(ok&&hPool()>0?'onclick="takeH(\''+a.id+'\')"':'disabled')+'><span>'+a.i+'</span><b>'+a.n+'</b><em>'+a.d+'</em>'+(!own&&!pk?'<small>нужно: '+a.p.filter(q=>!hHas(q)).map(q=>HTD[q].n).join(', ')+'</small>':'')+'</button>'}
+return h+'</div>'}
+const _tabH=tabUi;tabUi=function(){_tabH();if(!P||P.s!=18||!tabOn)return;
+ov.querySelectorAll('.tabs button').forEach(b=>{const t=b.textContent;if(t.indexOf('Мутации')==0)b.textContent='Древо навыков'+(hPool()>0?' ●':'');else if(t.indexOf('Навыки')==0)b.textContent='Способности'});
+if(tabN==1){const bd=ov.querySelector('.body');if(bd)bd.innerHTML=treeHtml()}};
+const _skH=skHtml;skHtml=function(){const h=_skH();if(!P||P.s!=18)return h;const i=h.indexOf('<h2 style="margin-top:18px">');return(i<0?h:h.slice(0,i)).replace(/<p class="pts">[\s\S]*?<\/p>/,'')};
+const _pkH=pkill;pkill=function(b){_pkH(b);if(P&&P.s==18&&!P.dead&&(P.hkc=(P.hkc||0)+1)%3==0){P.pts++;msg('✨ Очко древа навыков: охотничий опыт (Tab)')}};
+const _upH=upX;upX=function(dt){_upH(dt);const p=P;if(p&&p.s==18&&!p.dead&&(p.hl||0)<8&&p.age>((p.hl||0)+1)*150){p.hl=(p.hl||0)+1;p.pts++;msg('✨ Очко древа навыков: опыт выживания (Tab)')}};
+function human(a,r,c,fl,ph){const w=Math.sin(ph||0)*r*.4,sk=fl>0?'#fff':'#e2b88f',cl=fl>0?'#fff':c,e=(x,y,rx,ry,f)=>{g.fillStyle=f;g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fill()};
+g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(0,0,r*1.05,r*.8*K,0,0,7);g.fill();
+g.save();g.translate(0,-r*.4-Math.abs(w)*.15);g.scale(1,K);g.rotate(a);
+e(w,r*.32,r*.5,r*.22,'#4a3a2a');e(-w,-r*.32,r*.5,r*.22,'#4a3a2a');e(0,0,r*.55,r*.9,cl);
+g.strokeStyle=fl>0?'#fff':'#7a5a34';g.lineWidth=r*.12;g.beginPath();g.moveTo(-r*.9,r*.85);g.lineTo(r*2.1,r*.85);g.stroke();e(r*2.15,r*.85,r*.2,r*.12,fl>0?'#fff':'#cfd3d6');
+e(r*.4,r*.85,r*.36,r*.2,sk);e(r*.4,-r*.85,r*.36,r*.2,sk);e(0,0,r*.5,r*.5,fl>0?'#fff':'#3b2a1c');e(r*.12,0,r*.42,r*.42,sk);g.restore()}
 let th0=0;try{th0=+localStorage.getItem('isle2d_theme')||0}catch(e){}if(!TH[th0])th0=0;
 accInit();applyTheme(th0);menu();requestAnimationFrame(loop);
 </script></body></html>
