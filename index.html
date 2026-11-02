@@ -112,7 +112,7 @@ body.inmenu .b,body.inmenu #js{display:none!important}
 <div id="ov"></div>
 <script>
 const $=id=>document.getElementById(id),R=Math.random,TAU=Math.PI*2,cv=$('c'),g=cv.getContext('2d');
-let W,H,Z=1,keys={},P,npcs=[],bushes=[],cars=[],paused=true,last=0,hint='',hold={run:0,eat:0},jv={x:0,y:0},jid=null;
+const HBK=new Set(),HBD=[];let W,H,Z=1,keys={},P,npcs=[],bushes=[],cars=[],paused=true,last=0,hint='',hold={run:0,eat:0},jv={x:0,y:0},jid=null;
 function rs(){cv.width=W=innerWidth;cv.height=H=innerHeight;Z=Math.max(.8,Math.min(1.5,Math.min(W,H)/480))}rs();onresize=rs;
 // ---------- КАРТА ----------
 const T=32;let N=885,WS=N*T,map=new Uint8Array(N*N),FX=new Float32Array(N*N),FY=new Float32Array(N*N),RV=new Uint8Array(N*N),col=[];const MC={fillStyle:'',fillRect(){}},mm={getContext:()=>MC};
@@ -135,7 +135,7 @@ else if(dd<=2.3){if(map[i]==0)continue;map[i]=1;col[i]='hsl(190,52%,'+(50+s2*5)+
 }genWorld(885);
 function flowM(e,dt){const x=e.x/T|0,y=e.y/T|0;if(x<0||y<0||x>=N||y>=N)return;const i=y*N+x;if(RV[i])mv(e,FX[i]*dt,FY[i]*dt)}
 let TM=0;
-const tile=(x,y)=>{x=x/T|0;y=y/T|0;return x<0||y<0||x>=N||y>=N?6:map[y*N+x]},solid=(x,y)=>tile(x,y)==6;
+const tile=(x,y)=>{x=x/T|0;y=y/T|0;return x<0||y<0||x>=N||y>=N?6:HBK.has(y*N+x)?6:map[y*N+x]},solid=(x,y)=>tile(x,y)==6;
 function mv(e,dx,dy){if(!solid(e.x+dx+Math.sign(dx)*e.r*.6,e.y))e.x+=dx;if(!solid(e.x,e.y+dy+Math.sign(dy)*e.r*.6))e.y+=dy}
 function rp(far){let x,y,k=0;do{x=R()*WS;y=R()*WS;k++}while(([2,3,5].indexOf(tile(x,y))<0||(far&&P&&Math.hypot(x-P.x,y-P.y)<500))&&k<500);return[x,y]}
 // ---------- МУТАЦИИ ----------
@@ -327,9 +327,9 @@ L(hz+rv*.3,()=>{[-1,1].forEach(s=>{g.fillStyle='#f5e9c0';el(hx-ru*.1,s*rv*.6,r*.
 const ex=()=>{if(oy>8)exN(oy,r,c,L,F,el);if(oy==6)L(r*1.15,()=>{g.strokeStyle=sh(c,.75);g.lineWidth=r*.2;g.lineCap='round';g.beginPath();g.moveTo(r*1.9,0);g.lineTo(r*.5,0);g.stroke()});if(oy==7){L(r*.97,()=>{F(1.45);for(let k=-2;k<=2;k++)el(k*r*.45,0,r*.2,r*.55)});L(r*.5,()=>{F(.9);el(-r*2.7,0,r*.5,r*.5)})}};
 if(sa<-.1){head();body();tail()}else{tail();body();head()}ex()}
 function drawWorld(){bushes.forEach(b=>{if(b.x>CX-30&&b.x<CX+W/Z+30&&b.y>CY-30&&b.y<CY+H/Z/K+30)dr.push([b.y,7,b.x,b.y,b])});
-nests.forEach(n=>{if(n.x>CX-60&&n.x<CX+W/Z+60&&n.y>CY-60&&n.y<CY+H/Z/K+60)dr.push([n.y-30,12,n.x,n.y,n])});cars.forEach(c=>{if(!c.rcb)dr.push([c.y,8,c.x,c.y,c])});npcs.forEach(n=>{if(n.held||(n.x>CX-160&&n.x<CX+W/Z+160&&n.y>CY-160&&n.y<CY+H/Z/K+160))dr.push([n.held?P.y+.5:n.y,9,n.x,n.y,n])});dr.push([P.y,10,P.x,P.y,P]);rem.forEach(o=>{if(o.al){dr.push([o.y,11,o.x,o.y,o]);if(o.cc){const d=o.r*2.1+o.cr*.8,cx=o.x+Math.cos(o.a)*d,cy=o.y+Math.sin(o.a)*d;dr.push([cy,8,cx,cy,{x:cx,y:cy,l:Math.max(.05,o.cf),l0:1,t:100,r:o.cr,ty:o.ct<0?undefined:o.ct,ch:o.cc==2,rm:1}])}}});dr.sort((p,q)=>p[0]-q[0]);
+nests.forEach(n=>{if(n.x>CX-60&&n.x<CX+W/Z+60&&n.y>CY-60&&n.y<CY+H/Z/K+60)dr.push([n.y-30,12,n.x,n.y,n])});cars.forEach(c=>{if(!c.rcb)dr.push([c.y,8,c.x,c.y,c])});npcs.forEach(n=>{if(n.held||(n.x>CX-160&&n.x<CX+W/Z+160&&n.y>CY-160&&n.y<CY+H/Z/K+160))dr.push([n.held?P.y+.5:n.y,9,n.x,n.y,n])});dr.push([P.y,10,P.x,P.y,P]);HBD.forEach(b=>{if(Math.abs(b.x-P.x)<W/Z&&Math.abs(b.y-P.y)<H/Z/K+60)dr.push([b.y,21,b.x,b.y,b])});rem.forEach(o=>{if(o.al){dr.push([o.y,11,o.x,o.y,o]);if(o.cc){const d=o.r*2.1+o.cr*.8,cx=o.x+Math.cos(o.a)*d,cy=o.y+Math.sin(o.a)*d;dr.push([cy,8,cx,cy,{x:cx,y:cy,l:Math.max(.05,o.cf),l0:1,t:100,r:o.cr,ty:o.ct<0?undefined:o.ct,ch:o.cc==2,rm:1}])}}});dr.sort((p,q)=>p[0]-q[0]);
 dr.forEach(d=>{const t=d[1],x=d[2],y=d[3],o=d[4];g.save();g.translate((x-CX)*Z,(y-CY)*Z*K);g.scale(Z,Z);
-if(t==5)tree(x,y);else if(t==6)rock(x,y);else if(t==7)bush(o);else if(t==8)carc(o);else if(t==12)drawNest(o);
+if(t==5)tree(x,y);else if(t==21)hDrawB(o);else if(t==6)rock(x,y);else if(t==7)bush(o);else if(t==8)carc(o);else if(t==12)drawNest(o);
 else if(t==9){const sub=o.ty==8&&o.dv&&!o.held,vis=!sub||sniffOn()||P.s==8;if(o.held)g.translate(0,-P.r*.8);if(o.held&&P.dv)g.globalAlpha=.45;if(sub)g.globalAlpha=.38;if(o.sp>0){g.save();g.globalAlpha=o.sp*.7;g.strokeStyle='#e1f5ff';g.lineWidth=2.5;const rr=o.r+(1-o.sp)*o.r*4.5;g.beginPath();g.ellipse(0,0,rr,rr*K,0,0,7);g.stroke();g.restore()}if(vis)dino(dAng(o),o.r,o.c,o.fl,o.ty,o.ea>0,dPh(o,x,y));g.globalAlpha=1;if(o.held){const by=-o.r*2.4-8;g.fillStyle='rgba(0,0,0,.6)';g.fillRect(-17,by,34,6);g.fillStyle='#4aa8e8';g.fillRect(-16,by+1,32*Math.max(0,o.ox)/100,4)}}else{if(o.dv)g.globalAlpha=.4;dino(o===P?o.a:dAng(o),o.r,S[o.s].c,o.hf,o.s,o.bt>0,dPh(o,x,y));g.globalAlpha=1}if(t==11)tag(o);if(t==9&&o.al)aTag(o);g.restore()})}
 const det=(i,can)=>{const x=M[i];return'<div class="dt"><h4>'+IC[i]+' '+x[0]+'</h4>'+Object.keys(x[2]).map(k=>{const v=x[2][k],gd=(k=='tdec'||k=='hdec')?v<0:v>0;return'<div class="'+(gd?'g':'r')+'">'+(gd?'+ ':'− ')+ML[k]+' '+(v>0?'+':'−')+Math.round(Math.abs(v)*100)+'%</div>'}).join('')+(M[i][3]||[]).map(t=>'<div class="g">✦ '+t+'</div>').join('')+(can?'<button '+(P.pts>0?'':'disabled')+' onclick="take3()">Мутировать слот '+(selS+1)+'</button>':'')+'</div>'};
 function take3(){if(selS<0||selM<0||P.pts<1||P.sl[selS]!=null||P.mu.indexOf(selM)>=0||!mAv(selM))return;P.sl[selS]=selM;P.mu.push(selM);P.pts--;P.hp=Math.min(maxhp(),P.hp+20*PSC());tabUi()}
@@ -1262,9 +1262,9 @@ for(let r=0;r<4;r++)for(let c=0;c<4;c++){const a=HT.find(x=>x.c==c&&x.r==r),own=
 h+='<button class="tn'+(own?' own':ok?' ok':'')+(a.p?' ln':'')+(pk?' pk':'')+'" '+(ok&&hPool()>0?'onclick="takeH(\''+a.id+'\')"':'disabled')+'><span>'+a.i+'</span><b>'+a.n+'</b><em>'+a.d+'</em>'+(!own&&!pk?'<small>нужно: '+a.p.filter(q=>!hHas(q)).map(q=>HTD[q].n).join(', ')+'</small>':'')+'</button>'}
 return h+'</div>'}
 const _tabH=tabUi;tabUi=function(){_tabH();if(!P||P.s!=18||!tabOn)return;
-ov.querySelectorAll('.tabs button').forEach(b=>{const t=b.textContent;if(t.indexOf('Мутации')==0)b.textContent='Древо навыков'+(hPool()>0?' ●':'');else if(t.indexOf('Навыки')==0)b.textContent='Способности'});
+ov.querySelectorAll('.tabs button').forEach(b=>{const t=b.textContent;if(t.indexOf('Мутации')==0)b.textContent='Древо навыков'+(hPool()>0?' ●':'');else if(t.indexOf('Навыки')==0)b.textContent='Ремесло'});
 if(tabN==1){const bd=ov.querySelector('.body');if(bd)bd.innerHTML=treeHtml()}};
-const _skH=skHtml;skHtml=function(){const h=_skH();if(!P||P.s!=18)return h;const i=h.indexOf('<h2 style="margin-top:18px">');return(i<0?h:h.slice(0,i)).replace(/<p class="pts">[\s\S]*?<\/p>/,'')};
+const _skH=skHtml;skHtml=function(){const h=_skH();if(!P||P.s!=18)return h;const i=h.indexOf('<h2 style="margin-top:18px">');return(i<0?h:h.slice(0,i)).replace(/<p class="pts">[\s\S]*?<\/p>/,'')+hCraftHtml()};
 const _pkH=pkill;pkill=function(b){_pkH(b);if(P&&P.s==18&&!P.dead&&(P.hkc=(P.hkc||0)+1)%3==0){P.pts++;msg('✨ Очко древа навыков: охотничий опыт (Tab)')}};
 const _upH=upX;upX=function(dt){_upH(dt);const p=P;if(p&&p.s==18&&!p.dead&&(p.hl||0)<8&&p.age>((p.hl||0)+1)*150){p.hl=(p.hl||0)+1;p.pts++;msg('✨ Очко древа навыков: опыт выживания (Tab)')}};
 function human(a,r,c,fl,ph){const w=Math.sin(ph||0)*r*.4,sk=fl>0?'#fff':'#e2b88f',cl=fl>0?'#fff':c,e=(x,y,rx,ry,f)=>{g.fillStyle=f;g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fill()};
@@ -1273,6 +1273,49 @@ g.save();g.translate(0,-r*.4-Math.abs(w)*.15);g.scale(1,K);g.rotate(a);
 e(w,r*.32,r*.5,r*.22,'#4a3a2a');e(-w,-r*.32,r*.5,r*.22,'#4a3a2a');e(0,0,r*.55,r*.9,cl);
 g.strokeStyle=fl>0?'#fff':'#7a5a34';g.lineWidth=r*.12;g.beginPath();g.moveTo(-r*.9,r*.85);g.lineTo(r*2.1,r*.85);g.stroke();e(r*2.15,r*.85,r*.2,r*.12,fl>0?'#fff':'#cfd3d6');
 e(r*.4,r*.85,r*.36,r*.2,sk);e(r*.4,-r*.85,r*.36,r*.2,sk);e(0,0,r*.5,r*.5,fl>0?'#fff':'#3b2a1c');e(r*.12,0,r*.42,r*.42,sk);g.restore()}
+
+// ====================== МЕЛКИЕ ДИНОЗАВРЫ ИИ + ПОСЕЛЕНИЯ, ДОБЫЧА, КРАФТ ======================
+{const _mk=mkNpc;mkNpc=function(k,far){const n=_mk(k,far),f=.35+.65*Math.pow(R(),.55);n.r*=f;n.hp=n.mh=n.mh*f*f*f;n.sc=(n.sc||1)*f*f;n.sz=f;return n}}
+const HRN={wood:'🪵',stone:'🪨',hide:'🧶',med:'🩹'},HRL={wood:'дерево',stone:'камень',hide:'шкуры',med:'повязки'};
+const hIv=()=>P.inv||(P.inv={wood:0,stone:0,hide:0,med:0}),hCan=c=>Object.keys(c).every(k=>hIv()[k]>=c[k]),hSpend=c=>{for(const k in c)hIv()[k]-=c[k]};
+const hM2=(x,y)=>{x=x/T|0;y=y/T|0;return x<0||y<0||x>=N||y>=N?0:map[y*N+x]};
+function hNr(){for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)if(hM2(P.x+i*T,P.y+j*T)==6)return'stone';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)if(hM2(P.x+i*T,P.y+j*T)==5)return'wood';return null}
+const HBLD=[{id:'fire',i:'🔥',n:'Костёр',d:'Рядом лечит и восстанавливает силы, ночью светит',cost:{wood:3,stone:1}},
+{id:'wall',i:'🧱',n:'Частокол',d:'Блокирует проход для всех (1 клетка)',cost:{wood:3}},
+{id:'hut',i:'🛖',n:'Хижина',d:'Отдых («Лечь») рядом лечит втрое быстрее',cost:{wood:8,hide:3}},
+{id:'farm',i:'🌱',n:'Огород',d:'Куст еды, который отрастает снова и снова',cost:{wood:4}}];
+const HCR=[{id:'c_axe',i:'🪓',n:'Каменный топор',d:'Урон +20%, добыча вдвое быстрее',cost:{wood:3,stone:2},m:{dmg:.2}},
+{id:'c_arm',i:'🦺',n:'Кожаная броня',d:'Броня +20%',cost:{hide:4},m:{arm:.2}},
+{id:'c_med',i:'🩹',n:'Повязка',d:'Лечит 35% здоровья и останавливает кровотечение',cost:{hide:2}}];
+HCR.forEach(a=>{a.m=a.m||{};a.k=2;PSX[a.id]=a});
+function hStl(){const ty=new Set(HBD.map(b=>b.t)),L=Math.min(5,ty.size+(HBD.filter(b=>b.t=='wall').length>=4?1:0)),o=P.stl||0;if(L>o){P.pts+=L-o;P.stl=L;msg('🏘️ Поселение: уровень '+L+' · +очко навыков')}}
+function hBuild(id){const b=HBLD.find(x=>x.id==id);if(!b||!hCan(b.cost))return msg('Не хватает ресурсов');
+const tx=(P.x+Math.cos(P.a)*(P.r+34))/T|0,ty=(P.y+Math.sin(P.a)*(P.r+34))/T|0,x=(tx+.5)*T,y=(ty+.5)*T;
+if([2,3,5].indexOf(hM2(x,y))<0||HBK.has(ty*N+tx)||Math.hypot(P.x-x,P.y-y)<P.r+18||HBD.some(o=>Math.hypot(o.x-x,o.y-y)<26))return msg('Сюда строить нельзя');
+hSpend(b.cost);HBD.push({x,y,t:id});if(id=='wall'||id=='hut')HBK.add(ty*N+tx);if(id=='farm')bushes.push({x,y,l:60,t:0,r:10,q:[.3,.2,.5],fm:1});
+hStl();msg(b.i+' Построено: '+b.n);if(tabOn)toggleTab()}
+function hUnbuild(){let b=null,bd=90;HBD.forEach(o=>{const d=Math.hypot(o.x-P.x,o.y-P.y);if(d<bd){b=o;bd=d}});if(!b)return msg('Рядом нечего разбирать');
+HBD.splice(HBD.indexOf(b),1);HBK.delete((b.y/T|0)*N+(b.x/T|0));const c=HBLD.find(x=>x.id==b.t).cost,v=hIv();for(const k in c)v[k]+=c[k]>>1;
+if(b.t=='farm'){const i=bushes.findIndex(q=>q.fm&&Math.hypot(q.x-b.x,q.y-b.y)<5);if(i>=0)bushes.splice(i,1)}tabUi()}
+function hCraft(id){const r=HCR.find(x=>x.id==id);if(!r||!hCan(r.cost)||(id!='c_med'&&P.ps.indexOf(id)>=0))return;hSpend(r.cost);if(id=='c_med')hIv().med++;else P.ps.push(id);snd('up');tabUi()}
+function hMed(){const v=hIv();if(v.med<1||P.dead)return;v.med--;P.hp=Math.min(maxhp(),P.hp+maxhp()*.35);P.bld=0;snd('up');tabUi()}
+function hCraftHtml(){const v=hIv(),cs=c=>Object.keys(c).map(k=>HRN[k]+c[k]).join(' '),card=(r,own,act,lab)=>'<div class="mc'+(own?' own':'')+'"><h4>'+r.i+' '+r.n+'</h4><div class="g">'+r.d+'</div><small>'+cs(r.cost)+'</small>'+(own?'<span class="ok">Готово</span>':'<button '+(hCan(r.cost)?'':'disabled')+' onclick="'+act+'(\''+r.id+'\')">'+lab+'</button>')+'</div>';
+return'<h2 style="margin-top:18px">Рюкзак</h2><div class="kv"><span>'+Object.keys(HRN).map(k=>HRN[k]+' '+HRL[k]+': <b>'+v[k]+'</b>').join(' · ')+'</span></div><p style="font-size:12px;opacity:.7">Дерево — у деревьев (лес), камень — у скал: удерживай ЕСТЬ/Q. Шкуры падают с убитых животных.</p>'+(v.med>0?'<div class="dt"><button onclick="hMed()">🩹 Использовать повязку ('+v.med+')</button></div>':'')
++'<h2>Ремесло</h2><div class="cards">'+HCR.map(r=>card(r,r.id!='c_med'&&P.ps.indexOf(r.id)>=0,'hCraft','Создать')).join('')+'</div>'
++'<h2 style="margin-top:18px">Поселение · ур. '+(P.stl||0)+'</h2><p style="font-size:12px;opacity:.7">Каждый новый тип постройки (и 4+ частокола) повышает уровень поселения: +1 очко навыков. Строится перед тобой. Построек: '+HBD.length+'</p><div class="cards">'+HBLD.map(r=>card(r,0,'hBuild','Построить')).join('')+'</div><div class="dt"><button onclick="hUnbuild()">Разобрать ближайшую постройку (50% ресурсов)</button></div>'}
+function hDrawB(b){const t=b.t;g.fillStyle='rgba(0,0,0,.28)';g.beginPath();g.ellipse(2,0,18,18*K,0,0,7);g.fill();
+if(t=='fire'){g.fillStyle='#6c6a66';for(let i=0;i<6;i++){g.beginPath();g.arc(Math.cos(i)*9,Math.sin(i)*9*K,3.5,0,7);g.fill()}const f=1+Math.sin(TM*12+b.x)*.15;g.fillStyle='#e8672a';g.beginPath();g.ellipse(0,-9*f,6,11*f,0,0,7);g.fill();g.fillStyle='#ffd24a';g.beginPath();g.ellipse(0,-6*f,3,6*f,0,0,7);g.fill();if(dayL()<.5){g.fillStyle='rgba(255,170,60,.16)';g.beginPath();g.ellipse(0,0,130,130*K,0,0,7);g.fill()}}
+else if(t=='wall'){g.fillStyle='#7a5a34';g.fillRect(-16,-18,32,18);g.fillStyle='#a07c4a';g.fillRect(-16,-24,32,6);g.fillStyle='rgba(0,0,0,.25)';for(let i=-8;i<16;i+=8)g.fillRect(i,-18,1.5,18)}
+else if(t=='hut'){g.fillStyle='#8a6a3c';g.fillRect(-16,-18,32,18);g.fillStyle='#3a2616';g.fillRect(-4,-12,8,12);g.fillStyle='#a8643a';g.beginPath();g.moveTo(-24,-16);g.lineTo(0,-42);g.lineTo(24,-16);g.closePath();g.fill()}
+else{g.fillStyle='#4a3320';g.beginPath();g.ellipse(0,0,17,17*K,0,0,7);g.fill();g.strokeStyle='#6a4a2c';g.lineWidth=1.5;for(let i=-8;i<=8;i+=8){g.beginPath();g.moveTo(i,-6*K);g.lineTo(i,6*K);g.stroke()}}}
+const _stB=start;start=function(si){_stB(si);HBD.length=0;HBK.clear();if(P)P.inv={wood:0,stone:0,hide:0,med:0}};
+const _pkB=pkill;pkill=function(b){_pkB(b);if(P&&P.s==18&&!P.dead)hIv().hide+=b.mh>400?3:b.mh>60?2:1};
+const _upB=upX;upX=function(dt){_upB(dt);const p=P;if(!p||p.s!=18||p.dead)return;const r=hNr();
+if(r&&!p.carry&&(hold.eat||dn('eat'))){p.gt=(p.gt||0)-dt;if(p.gt<=0){p.gt=p.ps.indexOf('c_axe')>=0?.35:.7;hIv()[r]++;snd('eat')}}
+HBD.forEach(b=>{const d=Math.hypot(b.x-p.x,b.y-p.y);if(b.t=='fire'&&d<140){p.hp=Math.min(maxhp(),p.hp+maxhp()*.008*dt);p.st=Math.min(160*m('stm'),p.st+10*dt)}else if(b.t=='hut'&&p.rest&&d<90)p.hp=Math.min(maxhp(),p.hp+maxhp()*.03*dt)})};
+const _drB=draw;draw=function(){_drB();if(!P||P.dead||P.s!=18||MS)return;const v=hIv(),r=hNr();g.save();g.setTransform(1,0,0,1,0,0);g.font='bold 13px Bahnschrift,Oswald,Roboto,Arial,sans-serif';g.textAlign='center';
+const t=Object.keys(HRN).map(k=>HRN[k]+v[k]).join('   ')+(P.stl?'   🏘️'+P.stl:'');g.fillStyle='rgba(0,0,0,.6)';g.fillText(t,W/2+1,23);g.fillStyle='#e9e4cf';g.fillText(t,W/2,22);
+if(r&&!P.carry){const h='Удерживай '+EK()+' — '+(r=='wood'?'рубить дерево':'добывать камень');g.fillStyle='rgba(0,0,0,.6)';g.fillText(h,W/2+1,41);g.fillStyle=AC;g.fillText(h,W/2,40)}g.restore()};
 let th0=0;try{th0=+localStorage.getItem('isle2d_theme')||0}catch(e){}if(!TH[th0])th0=0;
 accInit();applyTheme(th0);menu();requestAnimationFrame(loop);
 </script></body></html>
